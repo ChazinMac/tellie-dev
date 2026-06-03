@@ -14,8 +14,8 @@ import { readFileSync } from "node:fs";
 const HELP = `tellie — push to Tellie's notch (the silent second screen)
 
 USAGE
-  tellie update <text> [--source NAME] [--icon SYMBOL] [--attention]
-  tellie flash  <text> [--source NAME] [--icon SYMBOL]
+  tellie update <text> [--source NAME] [--icon SYMBOL] [--attention] [--link URL] [--app BUNDLE_ID]
+  tellie flash  <text> [--source NAME] [--icon SYMBOL] [--link URL] [--app BUNDLE_ID]
   tellie send   <text> [--source NAME]
   tellie send   --file PATH [--source NAME]
   tellie clear
@@ -31,14 +31,16 @@ EXAMPLES
   tellie update "Needs your review" --source Claude --icon checkmark.circle --attention
   tellie flash  "PR #149 opened" --source CI --icon bolt
   tellie update "42k tokens · \\$0.11" --source agent-3 --icon 🤖
+  tellie update "CI #1234 passed" --source CI --icon hammer --link https://github.com/owner/repo/actions
   tellie send "You're on in 5 minutes" --source Calendar
   echo "piped text" | tellie update --source pipe
   tellie clear
 
 NOTES
   --icon is an SF Symbol name (hammer, checkmark.circle, bolt, clock) or a
-  single emoji. Requires Tellie installed and running on this Mac. Encoding
-  is handled for you; you do not need to percent-encode.`;
+  single emoji. --link makes the row clickable (opens the URL); --app opens
+  an app by bundle id instead. Requires Tellie installed and running on this
+  Mac. Encoding is handled for you; you do not need to percent-encode.`;
 
 function openTellie(url) {
   return new Promise((resolve, reject) => {
@@ -65,6 +67,8 @@ async function main() {
         file: { type: "string", short: "f" },
         icon: { type: "string", short: "i" },
         attention: { type: "boolean", short: "a" },
+        link: { type: "string", short: "l" },
+        app: { type: "string" },
         help: { type: "boolean", short: "h" },
       },
     });
@@ -94,6 +98,8 @@ async function main() {
     if (values.source && values.source.trim()) url += `&source=${encodeURIComponent(values.source)}`;
     if (values.icon && values.icon.trim()) url += `&icon=${encodeURIComponent(values.icon)}`;
     if (cmd === "update" && values.attention) url += `&attention=1`;
+    if (values.link && values.link.trim()) url += `&link=${encodeURIComponent(values.link)}`;
+    if (values.app && values.app.trim()) url += `&app=${encodeURIComponent(values.app)}`;
     await openTellie(url);
     return;
   }
