@@ -42,7 +42,11 @@ NOTES
 
 function openTellie(url) {
   return new Promise((resolve, reject) => {
-    execFile("open", [url], (err) => (err ? reject(err) : resolve()));
+    // `-g` = do NOT bring Tellie to the foreground. Without it, macOS `open`
+    // activates Tellie and steals keyboard focus from whatever the user is
+    // typing in (and stray keystrokes then beep). Tellie writes are meant to
+    // be ambient, so we always open in the background. Steve 2026-06-03.
+    execFile("open", ["-g", url], (err) => (err ? reject(err) : resolve()));
   });
 }
 

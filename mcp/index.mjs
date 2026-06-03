@@ -18,10 +18,14 @@ import { execFile } from "node:child_process";
 
 const server = new McpServer({ name: "tellie", version: "0.0.1" });
 
-/** Open a tellie:// URL via macOS `open`, resolving when it returns. */
+/** Open a tellie:// URL via macOS `open` (background), resolving when it returns. */
 function openTellieURL(url) {
   return new Promise((resolve, reject) => {
-    execFile("open", [url], (err) => (err ? reject(err) : resolve()));
+    // `-g` keeps Tellie in the background. Without it, `open` activates Tellie
+    // and steals keyboard focus from the user's foreground app (stray
+    // keystrokes then beep). Tellie writes are ambient by design. Steve
+    // 2026-06-03.
+    execFile("open", ["-g", url], (err) => (err ? reject(err) : resolve()));
   });
 }
 
