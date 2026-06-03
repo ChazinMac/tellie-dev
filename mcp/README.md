@@ -2,8 +2,8 @@
 
 An MCP server that lets AI clients (Claude Desktop, etc.) push text to
 **Tellie's silent second screen** in the Mac notch. It wraps the public
-`tellie://` URL scheme (see `../../INTEGRATIONS.md`), so it needs no private
-API and works against any installed Tellie build.
+`tellie://` URL scheme (documented in Tellie's INTEGRATIONS.md), so it needs
+no private API and works against any installed Tellie build.
 
 Status: **spike**. One tool, `send_to_tellie`. Proven end to end on
 2026-06-02 (see `test-client.mjs`). The full tool set (play/pause/reset,
@@ -18,7 +18,7 @@ for Developers" section.
 ## Run / test locally
 
 ```bash
-cd dev-tools/mcp
+cd tellie-dev/mcp
 npm install
 node test-client.mjs   # lists the tool, calls it; Tellie should show the strip
 ```
@@ -37,7 +37,7 @@ Desktop:
     "tellie": {
       "command": "node",
       "args": [
-        "/Users/stevechazin/Desktop/Personal AI Projects/NotchTeleprompter/dev-tools/mcp/index.mjs"
+        "/Users/stevechazin/Desktop/Personal AI Projects/tellie-dev/mcp/index.mjs"
       ]
     }
   }
