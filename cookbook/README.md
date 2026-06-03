@@ -29,6 +29,9 @@ Setup (CLI / MCP / raw URL scheme): see the repo root README and
 - **[Read the notch & coordinate agents](read-the-notch.md)** — read the live
   roster and history (`tellie status` / `log`, MCP `read_notch` / `read_log`)
   so a fleet of agents can avoid double-work or summarize the day.
+- **[Agent fleet coordination](agent-fleet-coordination.md)** — mission
+  control for many agents at once: each announces itself, checks the others
+  before claiming work, hands off, and raises a hand when you're needed.
 
 ## Bring your own
 
