@@ -54,13 +54,13 @@ NOTES
 
   status/log READ Tellie's local files (no API needed): the live snapshot
   ~/Library/Application Support/Tellie/state.json (always written, free) and
-  the daily history ~/Library/Application Support/Tellie/TellieLog/*.jsonl
+  the daily history ~/Library/Application Support/Tellie/PulseLog/*.jsonl
   (written only when Tellie Pro is active). Other commands require Tellie
   installed and running.`;
 
 const TELLIE_DIR = path.join(os.homedir(), "Library", "Application Support", "Tellie");
 const STATE_PATH = path.join(TELLIE_DIR, "state.json");
-const LOG_DIR = path.join(TELLIE_DIR, "TellieLog");
+const LOG_DIR = path.join(TELLIE_DIR, "PulseLog");
 
 function dayKey(date) {
   const p = (n) => String(n).padStart(2, "0");
