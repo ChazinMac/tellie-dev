@@ -15,8 +15,50 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { execFile } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 const server = new McpServer({ name: "tellie", version: "0.0.1" });
+
+// Tellie writes two local files an agent can READ (no API needed): a live
+// snapshot (state.json, always written, free) and the daily history
+// (TellieLog/*.jsonl, written only under Tellie Pro). Steve 2026-06-03.
+const TELLIE_DIR = path.join(os.homedir(), "Library", "Application Support", "Tellie");
+const STATE_PATH = path.join(TELLIE_DIR, "state.json");
+const LOG_DIR = path.join(TELLIE_DIR, "TellieLog");
+
+function dayKey(date) {
+  const p = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+}
+
+function readState() {
+  if (!existsSync(STATE_PATH)) return null;
+  try { return JSON.parse(readFileSync(STATE_PATH, "utf8")); } catch { return null; }
+}
+
+function readLogEntries({ source, sinceHours, limit }) {
+  const sinceSec = (sinceHours || 24) * 3600;
+  const cutoff = Date.now() / 1000 - sinceSec;
+  const days = Math.min(31, Math.ceil(sinceSec / 86400) + 1);
+  let out = [];
+  for (let i = 0; i < days; i++) {
+    const file = path.join(LOG_DIR, `${dayKey(new Date(Date.now() - i * 86400 * 1000))}.jsonl`);
+    if (!existsSync(file)) continue;
+    for (const line of readFileSync(file, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      let e;
+      try { e = JSON.parse(line); } catch { continue; }
+      if (typeof e.ts !== "number" || e.ts < cutoff) continue;
+      if (source && e.source !== source) continue;
+      out.push(e);
+    }
+  }
+  out.sort((a, b) => b.ts - a.ts);
+  if (limit > 0) out = out.slice(0, limit);
+  return out;
+}
 
 /** Open a tellie:// URL via macOS `open` (background), resolving when it returns. */
 function openTellieURL(url) {
@@ -210,6 +252,52 @@ server.registerTool(
         ],
       };
     }
+  }
+);
+
+server.registerTool(
+  "read_notch",
+  {
+    title: "Read the Tellie notch (live)",
+    description:
+      "Read what's currently on the user's notch: the live status roster " +
+      "(each source's current line) and any parked send. Lets you check " +
+      "whether another agent is already reporting, avoid duplicate work, or " +
+      "react to the current state. Reads a local snapshot file; no effect on " +
+      "the notch. Always available (free).",
+    inputSchema: {},
+  },
+  async () => {
+    const state = readState();
+    if (!state) {
+      return { content: [{ type: "text", text: "Notch state unavailable (is Tellie running?)." }] };
+    }
+    return { content: [{ type: "text", text: JSON.stringify(state, null, 2) }] };
+  }
+);
+
+server.registerTool(
+  "read_log",
+  {
+    title: "Read the Tellie notch history",
+    description:
+      "Read recent notch history (everything pushed via update/flash/send/the " +
+      "hotkey), newest first. Use to recall what happened, summarize a " +
+      "session, or build a report. Reads local daily files that Tellie Pro " +
+      "records; returns empty if Pro isn't recording.",
+    inputSchema: {
+      source: z.string().optional().describe("Only entries from this source name."),
+      sinceHours: z.number().optional().describe("How far back to look, in hours (default 24)."),
+      limit: z.number().optional().describe("Max entries to return (default 50)."),
+    },
+  },
+  async ({ source, sinceHours, limit }) => {
+    const entries = readLogEntries({
+      source: source && source.trim() ? source.trim() : null,
+      sinceHours: sinceHours || 24,
+      limit: limit && limit > 0 ? limit : 50,
+    });
+    return { content: [{ type: "text", text: JSON.stringify(entries, null, 2) }] };
   }
 );
 

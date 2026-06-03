@@ -25,6 +25,8 @@ await call("update_status", { text: "Needs your review (MCP)", source: "Claude",
 await new Promise((r) => setTimeout(r, 1500));
 await call("flash_status", { text: "Deployed 🚀 (MCP)", source: "CI", icon: "bolt" });
 await new Promise((r) => setTimeout(r, 1500));
+await call("read_notch", {});
+await call("read_log", { sinceHours: 1, limit: 5 });
 await call("clear_notch", {});
 
 await client.close();

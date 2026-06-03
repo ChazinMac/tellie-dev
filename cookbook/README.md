@@ -26,6 +26,9 @@ Setup (CLI / MCP / raw URL scheme): see the repo root README and
   points or an agenda you can glance at, private on a screen share.
 - **["Now reading"](now-reading.md)** — `send` a script and read it on camera
   with Voice Follow, for your next founder/launch video.
+- **[Read the notch & coordinate agents](read-the-notch.md)** — read the live
+  roster and history (`tellie status` / `log`, MCP `read_notch` / `read_log`)
+  so a fleet of agents can avoid double-work or summarize the day.
 
 ## Bring your own
 
