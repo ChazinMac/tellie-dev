@@ -82,3 +82,7 @@ tellie update "Running tests… (12/40)" --source Claude --icon hammer
 tellie update "Needs your review" --source Claude --icon checkmark.circle --attention
 tellie flash  "PR #149 opened" --source Claude --icon bolt
 ```
+
+`--attention` (CLI) / `attention: true` (MCP) is your **alert**: the line
+shows as a pulsing orange highlight so it actually grabs the eye. Use it
+sparingly, for "I'm done" or "I'm blocked, look at me."
