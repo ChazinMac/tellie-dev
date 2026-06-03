@@ -17,7 +17,8 @@ Playback verbs and npm publishing come next; see `../TELLIE-FOR-DEVS-SPEC.md`.
   SF Symbol name (`hammer`, `checkmark.circle`, `bolt`) or an emoji.
 - **`flash_status(text, source?, icon?)`** — a brief status that auto-clears
   (one-off pings / milestones).
-- **`clear_notch()`** — remove whatever's showing.
+- **`clear_notch(source?)`** — remove one source's line (sign off) with
+  `source`, or clear everything without it.
 - **`send_to_tellie(text, source?)`** — load readable content as a
   teleprompter script (click the notch to read it full).
 

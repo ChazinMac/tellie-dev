@@ -95,7 +95,13 @@ async function main() {
   }
 
   if (cmd === "clear" || cmd === "dismiss") {
-    await openTellie("tellie://clear");
+    // clear --source NAME removes just that source from the roster;
+    // bare clear wipes everything.
+    let url = "tellie://clear";
+    if (values.source && values.source.trim()) {
+      url += `?source=${encodeURIComponent(values.source)}`;
+    }
+    await openTellie(url);
     return;
   }
 
