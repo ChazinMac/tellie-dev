@@ -12,7 +12,10 @@ so it works against any installed Tellie build.
 - **`mcp/`** — an MCP server (`@tellie/mcp`) so MCP-aware AI clients
   (Claude Desktop, etc.) can send content to Tellie. Working spike today:
   one `send_to_tellie` tool. See [mcp/README.md](mcp/README.md).
-- **`cli/`** — a `tellie` command-line tool. _(coming next)_
+- **`cli/`** — a `tellie` command-line tool (`tellie send` / `dismiss`,
+  with `--source`, file, and piped-stdin support). See [cli/README.md](cli/README.md).
+- **`TELLIE-FOR-DEVS-SPEC.md`** — the working spec: the verb primitive, the
+  three access doors, multi-source surface, and the recipe cookbook.
 
 ## Status
 
