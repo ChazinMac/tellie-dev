@@ -11,23 +11,34 @@ import { execFile } from "node:child_process";
 import { parseArgs } from "node:util";
 import { readFileSync } from "node:fs";
 
-const HELP = `tellie — push text to Tellie's notch
+const HELP = `tellie — push to Tellie's notch (the silent second screen)
 
 USAGE
-  tellie send <text> [--source NAME]
-  tellie send --file PATH [--source NAME]
-  tellie dismiss
+  tellie update <text> [--source NAME] [--icon SYMBOL] [--attention]
+  tellie flash  <text> [--source NAME] [--icon SYMBOL]
+  tellie send   <text> [--source NAME]
+  tellie send   --file PATH [--source NAME]
+  tellie clear
   tellie --help
 
+  update  set/replace a glanceable status line (stays until changed)
+  flash   a transient status that auto-clears after a few seconds
+  send    load readable content as a teleprompter script (click to read)
+  clear   remove whatever is showing
+
 EXAMPLES
+  tellie update "Building project…" --source Claude --icon hammer
+  tellie update "Needs your review" --source Claude --icon checkmark.circle --attention
+  tellie flash  "PR #149 opened" --source CI --icon bolt
+  tellie update "42k tokens · \\$0.11" --source agent-3 --icon 🤖
   tellie send "You're on in 5 minutes" --source Calendar
-  tellie send --file ./script.md --source Drafts
-  echo "piped text" | tellie send --source pipe
-  tellie dismiss
+  echo "piped text" | tellie update --source pipe
+  tellie clear
 
 NOTES
-  Requires Tellie installed and running on this Mac. Encoding (spaces,
-  punctuation) is handled for you; you do not need to percent-encode.`;
+  --icon is an SF Symbol name (hammer, checkmark.circle, bolt, clock) or a
+  single emoji. Requires Tellie installed and running on this Mac. Encoding
+  is handled for you; you do not need to percent-encode.`;
 
 function openTellie(url) {
   return new Promise((resolve, reject) => {
@@ -48,6 +59,8 @@ async function main() {
       options: {
         source: { type: "string", short: "s" },
         file: { type: "string", short: "f" },
+        icon: { type: "string", short: "i" },
+        attention: { type: "boolean", short: "a" },
         help: { type: "boolean", short: "h" },
       },
     });
@@ -63,8 +76,26 @@ async function main() {
 
   const cmd = positionals[0];
 
-  if (cmd === "dismiss") {
-    await openTellie("tellie://dismiss");
+  // Read text from positional args or piped stdin.
+  const textArg = () => {
+    let t = positionals.slice(1).join(" ");
+    if (!t && !process.stdin.isTTY) t = readFileSync(0, "utf8").trim();
+    return t;
+  };
+
+  if (cmd === "update" || cmd === "flash") {
+    const text = textArg();
+    if (!text) fail(`${cmd} needs text, or piped stdin. See --help.`);
+    let url = `tellie://${cmd}?text=${encodeURIComponent(text)}`;
+    if (values.source && values.source.trim()) url += `&source=${encodeURIComponent(values.source)}`;
+    if (values.icon && values.icon.trim()) url += `&icon=${encodeURIComponent(values.icon)}`;
+    if (cmd === "update" && values.attention) url += `&attention=1`;
+    await openTellie(url);
+    return;
+  }
+
+  if (cmd === "clear" || cmd === "dismiss") {
+    await openTellie("tellie://clear");
     return;
   }
 

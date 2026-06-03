@@ -5,15 +5,21 @@ An MCP server that lets AI clients (Claude Desktop, etc.) push text to
 `tellie://` URL scheme (documented in Tellie's INTEGRATIONS.md), so it needs
 no private API and works against any installed Tellie build.
 
-Status: **spike**. One tool, `send_to_tellie`. Proven end to end on
-2026-06-02 (see `test-client.mjs`). The full tool set (play/pause/reset,
-update_notch, etc.) and npm publishing come next; see the roadmap's "Tellie
-for Developers" section.
+Status: working (pre-publish). Verified end to end via `test-client.mjs`.
+Playback verbs and npm publishing come next; see `../TELLIE-FOR-DEVS-SPEC.md`.
 
 ## Tools
 
-- **`send_to_tellie(text, source?)`** — display `text` in the notch.
-  `source` is an optional short attribution shown beside the notch.
+- **`update_status(text, source?, icon?, attention?)`** — set/replace a
+  glanceable status line in the notch (build step, tokens, a timer,
+  anything). Replaces the previous line from the same source; never steals
+  focus. `attention: true` is the "look up / needs you" cue. `icon` is an
+  SF Symbol name (`hammer`, `checkmark.circle`, `bolt`) or an emoji.
+- **`flash_status(text, source?, icon?)`** — a brief status that auto-clears
+  (one-off pings / milestones).
+- **`clear_notch()`** — remove whatever's showing.
+- **`send_to_tellie(text, source?)`** — load readable content as a
+  teleprompter script (click the notch to read it full).
 
 ## Run / test locally
 
