@@ -3,6 +3,10 @@
 Make your notch show, automatically and in perfect sync, when an AI agent
 is working vs done, with zero per-message effort.
 
+> This is the exact recipe that powers the "Thinking… ✨ Claude" line on
+> the author's own notch. Paste the Claude Code block below and you have it
+> in under a minute: no code, no restart.
+
 ## The problem
 
 Marking "working" is easy: an agent fires `update` as its first tool call.
@@ -51,6 +55,10 @@ Add this to `~/.claude/settings.json` (global) or a project's
 Now every prompt flips the notch to "Thinking… ✨ Claude" and every finished
 turn clears it, perfectly synced to the model's actual generation. Hooks
 reload on the next turn; no restart needed.
+
+What's that `%E2%80%A6`? Just the URL-encoding of the ellipsis character
+"…". You can write `Thinking...` with three plain dots if you prefer; both
+work. (`sparkles` is an SF Symbol name; swap in any symbol or an emoji.)
 
 (Prefer the CLI? Use `tellie update "Thinking…" --source Claude --icon
 sparkles` and `tellie clear --source Claude` as the hook commands instead.)
