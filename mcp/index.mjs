@@ -119,10 +119,23 @@ server.registerTool(
   "clear_notch",
   {
     title: "Clear the Tellie notch",
-    description: "Remove whatever Tellie is currently showing, back to the bare notch.",
-    inputSchema: {},
+    description:
+      "Remove status from the notch. With `source`, removes just that " +
+      "source's line from the multi-source roster (use this to sign off " +
+      "when you're done). Without `source`, clears everything.",
+    inputSchema: {
+      source: z
+        .string()
+        .optional()
+        .describe("Remove only this source's status line. Omit to clear all."),
+    },
   },
-  async () => fire("tellie://clear", "Notch cleared.")
+  async ({ source }) => {
+    const url = source && source.trim()
+      ? `tellie://clear?source=${encodeURIComponent(source)}`
+      : "tellie://clear";
+    return fire(url, source ? `Cleared ${source} from the notch.` : "Notch cleared.");
+  }
 );
 
 server.registerTool(
