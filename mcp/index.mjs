@@ -48,11 +48,13 @@ async function fire(url, okMsg) {
 }
 
 /** Build a tellie:// status URL (update/flash) with %20 encoding. */
-function statusURL(action, { text, source, icon, attention }) {
+function statusURL(action, { text, source, icon, attention, link, app }) {
   let url = `tellie://${action}?text=${encodeURIComponent(text)}`;
   if (source && source.trim()) url += `&source=${encodeURIComponent(source)}`;
   if (icon && icon.trim()) url += `&icon=${encodeURIComponent(icon)}`;
   if (action === "update" && attention) url += `&attention=1`;
+  if (link && link.trim()) url += `&link=${encodeURIComponent(link)}`;
+  if (app && app.trim()) url += `&app=${encodeURIComponent(app)}`;
   return url;
 }
 
@@ -81,14 +83,22 @@ server.registerTool(
         .boolean()
         .optional()
         .describe("true to draw the user's attention (a 'look up / needs you' cue)."),
+      link: z
+        .string()
+        .optional()
+        .describe("A URL to open if the user clicks this row in the notch (e.g. a CI run, a PR)."),
+      app: z
+        .string()
+        .optional()
+        .describe("An app bundle id to open on click (e.g. 'com.apple.Safari'); used only if link is absent."),
     },
   },
-  async ({ text, source, icon, attention }) => {
+  async ({ text, source, icon, attention, link, app }) => {
     if (!text || !text.trim()) {
       return { isError: true, content: [{ type: "text", text: "No status text provided." }] };
     }
     return fire(
-      statusURL("update", { text, source, icon, attention }),
+      statusURL("update", { text, source, icon, attention, link, app }),
       `Notch status set: "${text}"${source ? ` (${source})` : ""}.`
     );
   }
@@ -106,14 +116,16 @@ server.registerTool(
       text: z.string().describe("The status to flash."),
       source: z.string().optional().describe("Short name for who this is."),
       icon: z.string().optional().describe("An SF Symbol name or a single emoji."),
+      link: z.string().optional().describe("A URL to open if the user clicks this row."),
+      app: z.string().optional().describe("An app bundle id to open on click; used only if link is absent."),
     },
   },
-  async ({ text, source, icon }) => {
+  async ({ text, source, icon, link, app }) => {
     if (!text || !text.trim()) {
       return { isError: true, content: [{ type: "text", text: "No status text provided." }] };
     }
     return fire(
-      statusURL("flash", { text, source, icon }),
+      statusURL("flash", { text, source, icon, link, app }),
       `Flashed: "${text}".`
     );
   }

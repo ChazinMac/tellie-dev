@@ -7,15 +7,18 @@ browser tab waiting for the build.
 
 ```bash
 tellie update "CI running…" --source GitHub --icon gearshape
+RUN_URL=$(gh run view --json url -q .url 2>/dev/null)
 if gh run watch --exit-status; then
   tellie flash "CI green" --source GitHub --icon checkmark.circle
 else
-  tellie update "CI failed — look" --source GitHub --icon xmark.octagon --attention
+  tellie update "CI failed, look" --source GitHub --icon xmark.octagon --attention --link "$RUN_URL"
 fi
 ```
 
 `gh run watch` blocks until the latest run finishes, so this whole thing
-just sits quietly and pings your notch when it's done.
+just sits quietly and pings your notch when it's done. The `--link` on the
+failure line makes the notch row clickable: hover the notch, click it, and
+the failed run opens in your browser. No tab to hunt for.
 
 ## Any webhook / remote signal
 
