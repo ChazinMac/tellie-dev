@@ -37,14 +37,14 @@ Add this to `~/.claude/settings.json` (global) or a project's
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "open \"tellie://update?text=Thinking%E2%80%A6&source=Claude&icon=sparkles\"" }
+          { "type": "command", "command": "open -g \"tellie://update?text=Thinking%E2%80%A6&source=Claude&icon=sparkles\"" }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "open \"tellie://clear?source=Claude\"" }
+          { "type": "command", "command": "open -g \"tellie://clear?source=Claude\"" }
         ]
       }
     ]
@@ -60,6 +60,11 @@ What's that `%E2%80%A6`? Just the URL-encoding of the ellipsis character
 "…". You can write `Thinking...` with three plain dots if you prefer; both
 work. (`sparkles` is an SF Symbol name; swap in any symbol or an emoji.)
 
+Why `open -g`? The `-g` flag opens Tellie in the background. Without it,
+`open` would activate Tellie and pull keyboard focus away from whatever you
+are typing in (and stray keystrokes would beep). Always use `-g` for hooks
+and scripts so the notch stays ambient. (The `tellie` CLI does this for you.)
+
 (Prefer the CLI? Use `tellie update "Thinking…" --source Claude --icon
 sparkles` and `tellie clear --source Claude` as the hook commands instead.)
 
@@ -68,8 +73,8 @@ sparkles` and `tellie clear --source Claude` as the hook commands instead.)
 Same pattern, wherever your harness lets you run a command on turn
 start/end (a lifecycle hook, middleware, or wrapper):
 
-- on receive / turn start: `open "tellie://update?text=Working%E2%80%A6&source=OpenClaw&icon=bolt"`
-- on stream finish / turn end: `open "tellie://clear?source=OpenClaw"`
+- on receive / turn start: `open -g "tellie://update?text=Working%E2%80%A6&source=OpenClaw&icon=bolt"`
+- on stream finish / turn end: `open -g "tellie://clear?source=OpenClaw"`
 
 That takes the burden off the model to manage its own idle state and keeps
 the notch 100% in sync with the engine.
