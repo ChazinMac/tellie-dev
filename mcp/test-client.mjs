@@ -13,16 +13,19 @@ await client.connect(transport);
 
 const { tools } = await client.listTools();
 console.log("TOOLS:", tools.map((t) => t.name).join(", "));
-console.log("SCHEMA:", JSON.stringify(tools[0]?.inputSchema));
 
-const res = await client.callTool({
-  name: "send_to_tellie",
-  arguments: {
-    text: "Hello from the Tellie MCP spike. If you can read this in the notch, the round trip works.",
-    source: "MCP test",
-  },
-});
-console.log("CALL RESULT:", JSON.stringify(res));
+const call = async (name, args) => {
+  const res = await client.callTool({ name, arguments: args });
+  console.log(`${name}:`, JSON.stringify(res.content?.[0]?.text ?? res));
+};
+
+await call("update_status", { text: "Running tests… (MCP)", source: "Claude", icon: "hammer" });
+await new Promise((r) => setTimeout(r, 1500));
+await call("update_status", { text: "Needs your review (MCP)", source: "Claude", icon: "checkmark.circle", attention: true });
+await new Promise((r) => setTimeout(r, 1500));
+await call("flash_status", { text: "Deployed 🚀 (MCP)", source: "CI", icon: "bolt" });
+await new Promise((r) => setTimeout(r, 1500));
+await call("clear_notch", {});
 
 await client.close();
 console.log("OK");

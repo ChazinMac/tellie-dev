@@ -25,6 +25,106 @@ function openTellieURL(url) {
   });
 }
 
+/** Open a tellie:// URL and return an MCP tool result (ok or error). */
+async function fire(url, okMsg) {
+  try {
+    await openTellieURL(url);
+    return { content: [{ type: "text", text: okMsg }] };
+  } catch (err) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: "text",
+          text: `Could not reach Tellie: ${String(err)}. Is Tellie installed and running?`,
+        },
+      ],
+    };
+  }
+}
+
+/** Build a tellie:// status URL (update/flash) with %20 encoding. */
+function statusURL(action, { text, source, icon, attention }) {
+  let url = `tellie://${action}?text=${encodeURIComponent(text)}`;
+  if (source && source.trim()) url += `&source=${encodeURIComponent(source)}`;
+  if (icon && icon.trim()) url += `&icon=${encodeURIComponent(icon)}`;
+  if (action === "update" && attention) url += `&attention=1`;
+  return url;
+}
+
+server.registerTool(
+  "update_status",
+  {
+    title: "Update Tellie status",
+    description:
+      "Set or replace a glanceable status line in the user's Mac notch via " +
+      "Tellie. Use it to show what you're doing right now (a build step, a " +
+      "test run, tokens/cost used, a timer, a milestone, anything). It " +
+      "REPLACES the previous line from the same source and never steals " +
+      "focus or interrupts the user. Set attention=true when you need the " +
+      "user to look up (you finished, or you're blocked waiting on them).",
+    inputSchema: {
+      text: z.string().describe("The status line to show."),
+      source: z
+        .string()
+        .optional()
+        .describe("Short name for who this is (e.g. 'Claude', 'CI', 'agent-3'), shown beside the notch."),
+      icon: z
+        .string()
+        .optional()
+        .describe("An SF Symbol name (e.g. 'hammer', 'checkmark.circle', 'bolt', 'clock') or a single emoji."),
+      attention: z
+        .boolean()
+        .optional()
+        .describe("true to draw the user's attention (a 'look up / needs you' cue)."),
+    },
+  },
+  async ({ text, source, icon, attention }) => {
+    if (!text || !text.trim()) {
+      return { isError: true, content: [{ type: "text", text: "No status text provided." }] };
+    }
+    return fire(
+      statusURL("update", { text, source, icon, attention }),
+      `Notch status set: "${text}"${source ? ` (${source})` : ""}.`
+    );
+  }
+);
+
+server.registerTool(
+  "flash_status",
+  {
+    title: "Flash a Tellie status",
+    description:
+      "Show a brief status in the user's notch that auto-clears after a few " +
+      "seconds. Use for one-off pings / milestones (e.g. 'PR opened', " +
+      "'deploy finished'). Like update_status but transient.",
+    inputSchema: {
+      text: z.string().describe("The status to flash."),
+      source: z.string().optional().describe("Short name for who this is."),
+      icon: z.string().optional().describe("An SF Symbol name or a single emoji."),
+    },
+  },
+  async ({ text, source, icon }) => {
+    if (!text || !text.trim()) {
+      return { isError: true, content: [{ type: "text", text: "No status text provided." }] };
+    }
+    return fire(
+      statusURL("flash", { text, source, icon }),
+      `Flashed: "${text}".`
+    );
+  }
+);
+
+server.registerTool(
+  "clear_notch",
+  {
+    title: "Clear the Tellie notch",
+    description: "Remove whatever Tellie is currently showing, back to the bare notch.",
+    inputSchema: {},
+  },
+  async () => fire("tellie://clear", "Notch cleared.")
+);
+
 server.registerTool(
   "send_to_tellie",
   {
