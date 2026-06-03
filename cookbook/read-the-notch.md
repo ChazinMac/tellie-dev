@@ -9,7 +9,7 @@ Two local files back this (no API, no network):
 
 - `~/Library/Application Support/Tellie/state.json` — the live roster
   snapshot. Always written. **Free.**
-- `~/Library/Application Support/Tellie/TellieLog/YYYY-MM-DD.jsonl` — the
+- `~/Library/Application Support/Tellie/PulseLog/YYYY-MM-DD.jsonl` — the
   rolling daily history. Written only when **Tellie Pro** is active.
 
 ## Read the current state

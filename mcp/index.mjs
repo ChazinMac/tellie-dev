@@ -23,10 +23,10 @@ const server = new McpServer({ name: "tellie", version: "0.0.1" });
 
 // Tellie writes two local files an agent can READ (no API needed): a live
 // snapshot (state.json, always written, free) and the daily history
-// (TellieLog/*.jsonl, written only under Tellie Pro). Steve 2026-06-03.
+// (PulseLog/*.jsonl, written only under Tellie Pro). Steve 2026-06-03.
 const TELLIE_DIR = path.join(os.homedir(), "Library", "Application Support", "Tellie");
 const STATE_PATH = path.join(TELLIE_DIR, "state.json");
-const LOG_DIR = path.join(TELLIE_DIR, "TellieLog");
+const LOG_DIR = path.join(TELLIE_DIR, "PulseLog");
 
 function dayKey(date) {
   const p = (n) => String(n).padStart(2, "0");
