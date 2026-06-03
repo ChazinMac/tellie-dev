@@ -14,6 +14,8 @@ so it works against any installed Tellie build.
   one `send_to_tellie` tool. See [mcp/README.md](mcp/README.md).
 - **`cli/`** — a `tellie` command-line tool (`tellie send` / `dismiss`,
   with `--source`, file, and piped-stdin support). See [cli/README.md](cli/README.md).
+- **`cookbook/`** — recipes for the notch surface (start with
+  [agent lifecycle status](cookbook/agent-lifecycle-status.md)).
 - **`TELLIE-FOR-DEVS-SPEC.md`** — the working spec: the verb primitive, the
   three access doors, multi-source surface, and the recipe cookbook.
 
