@@ -14,15 +14,18 @@ Setup (CLI / MCP / raw URL scheme): see the repo root README and
 - **[Agent lifecycle status](agent-lifecycle-status.md)** — auto-show when an
   AI agent is working vs idle, perfectly synced, via your harness's
   start/stop hooks (Claude Code, OpenClaw, etc.). The flagship example.
-
-### Coming soon (same verbs, different glance)
-
-- **Build / test status** — `update` as a build or test run progresses.
-- **Token + cost meter** — `update "142k tokens · $0.38"` as you go.
-- **Pomodoro / timer** — `update` the remaining time; `flash` on done.
-- **CI / webhook to notch** — a tiny script turns a webhook into a `flash`.
-- **Standup notes / reminders** — park a glanceable cheat sheet with `send`.
-- **"Now reading"** — `send` a script for your next founder/launch video.
+- **[Build / test status](build-test-status.md)** — wrap a build/test command
+  so the notch shows progress + the result (red pulse on failure).
+- **[Token + cost meter](token-cost-meter.md)** — a live tokens/cost/files
+  meter in the notch while an agent works.
+- **[Pomodoro / timer](pomodoro-timer.md)** — a focus countdown that ticks in
+  the notch and nudges you when the interval ends.
+- **[CI status in the notch](ci-to-notch.md)** — reflect a GitHub Actions run
+  (or any webhook) so you stop babysitting a browser tab.
+- **[Cheat sheets & reminders](cheat-sheet-reminders.md)** — park talking
+  points or an agenda you can glance at, private on a screen share.
+- **["Now reading"](now-reading.md)** — `send` a script and read it on camera
+  with Voice Follow, for your next founder/launch video.
 
 ## Bring your own
 
