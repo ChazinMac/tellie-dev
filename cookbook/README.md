@@ -11,9 +11,13 @@ Setup (CLI / MCP / raw URL scheme): see the repo root README and
 
 ## Recipes
 
+- **⭐ [Make your AI agent narrate to your notch](narrate-to-your-notch.md)** —
+  **start here.** The one that makes people get it: your agent shows what it's
+  actually doing, live, in your notch, and hands you clickable links when it's
+  done. Lifecycle + descriptive updates + clickable hand-offs + attention.
 - **[Agent lifecycle status](agent-lifecycle-status.md)** — auto-show when an
   AI agent is working vs idle, perfectly synced, via your harness's
-  start/stop hooks (Claude Code, OpenClaw, etc.). The flagship example.
+  start/stop hooks (Claude Code, OpenClaw, etc.). The deeper hooks reference.
 - **[Build / test status](build-test-status.md)** — wrap a build/test command
   so the notch shows progress + the result (red pulse on failure).
 - **[Token + cost meter](token-cost-meter.md)** — a live tokens/cost/files
