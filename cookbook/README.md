@@ -7,7 +7,8 @@ just a combination of the verbs (`update`, `flash`, `clear`, `send`); mix
 them however you like, or invent your own.
 
 Setup (CLI / MCP / raw URL scheme): see the repo root README and
-`../mcp/README.md`.
+`../mcp/README.md`. For a copy-paste quick reference of every verb and flag,
+see the [terminal cheatsheet](../CHEATSHEET.md).
 
 ## Recipes
 
