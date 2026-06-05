@@ -16,6 +16,8 @@ so it works against any installed Tellie build.
   with `--source`, file, and piped-stdin support). See [cli/README.md](cli/README.md).
 - **`cookbook/`** — recipes for the notch surface (start with
   [agent lifecycle status](cookbook/agent-lifecycle-status.md)).
+- **[`CHEATSHEET.md`](CHEATSHEET.md)** — copy-paste terminal quick reference
+  for every verb and flag.
 - **`TELLIE-FOR-DEVS-SPEC.md`** — the working spec: the verb primitive, the
   three access doors, multi-source surface, and the recipe cookbook.
 
