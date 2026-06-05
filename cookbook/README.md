@@ -15,6 +15,10 @@ Setup (CLI / MCP / raw URL scheme): see the repo root README and
   **start here.** The one that makes people get it: your agent shows what it's
   actually doing, live, in your notch, and hands you clickable links when it's
   done. Lifecycle + descriptive updates + clickable hand-offs + attention.
+- **⭐ [Mine your Pulse Log](mine-your-pulse-log.md)** — Tellie keeps a private,
+  local, plain-text JSONL of everything that ever pinged your notch. `jq` it for
+  agent turn durations, reopen every link a tool handed you, `tail -f` for
+  "needs you" alerts, or feed the day to an LLM for a standup. (Pro.)
 - **[Agent lifecycle status](agent-lifecycle-status.md)** — auto-show when an
   AI agent is working vs idle, perfectly synced, via your harness's
   start/stop hooks (Claude Code, OpenClaw, etc.). The deeper hooks reference.
