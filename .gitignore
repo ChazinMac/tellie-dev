@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Local env / secrets (never commit these)
+.env
+.env.*
+*.local
+
+# Logs
+*.log
