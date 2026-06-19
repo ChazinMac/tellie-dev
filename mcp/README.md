@@ -44,7 +44,7 @@ Desktop:
     "tellie": {
       "command": "node",
       "args": [
-        "/Users/stevechazin/Desktop/Personal AI Projects/tellie-dev/mcp/index.mjs"
+        "/absolute/path/to/tellie-dev/mcp/index.mjs"
       ]
     }
   }
