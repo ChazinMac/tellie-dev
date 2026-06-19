@@ -4,7 +4,7 @@
   "description": "MCP server for Tellie: send text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {
-    "tellie-mcp": "./index.mjs"
+    "tellie-mcp": "index.mjs"
   },
   "files": [
     "index.mjs"
