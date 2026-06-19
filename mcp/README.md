@@ -42,10 +42,24 @@ Desktop:
 {
   "mcpServers": {
     "tellie": {
+      "command": "npx",
+      "args": ["-y", "@tellie/mcp"]
+    }
+  }
+}
+```
+
+That uses the published package; npm fetches and runs it for you, no clone needed.
+
+Prefer to run from a local clone? Point `command` at `node` and `args` at the
+absolute path to `mcp/index.mjs`:
+
+```json
+{
+  "mcpServers": {
+    "tellie": {
       "command": "node",
-      "args": [
-        "/absolute/path/to/tellie-dev/mcp/index.mjs"
-      ]
+      "args": ["/absolute/path/to/tellie-dev/mcp/index.mjs"]
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@tellie/cli",
-  "version": "0.0.1",
-  "description": "Command-line tool for Tellie — push text to the silent second screen in the Mac notch.",
+  "version": "0.4.2",
+  "description": "Command-line tool for Tellie: push text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {
     "tellie": "./index.mjs"
@@ -11,5 +11,24 @@
   ],
   "engines": {
     "node": ">=18"
-  }
+  },
+  "license": "MIT",
+  "author": "Steve Chazin",
+  "homepage": "https://tellieapp.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChazinMac/tellie-dev.git",
+    "directory": "cli"
+  },
+  "bugs": "https://github.com/ChazinMac/tellie-dev/issues",
+  "keywords": [
+    "tellie",
+    "notch",
+    "macos",
+    "menu-bar",
+    "teleprompter",
+    "second-screen",
+    "cli",
+    "command-line"
+  ]
 }

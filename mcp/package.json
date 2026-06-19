@@ -1,7 +1,7 @@
 {
   "name": "@tellie/mcp",
-  "version": "0.0.1",
-  "description": "MCP server for Tellie — send text to the silent second screen in the Mac notch.",
+  "version": "0.4.2",
+  "description": "MCP server for Tellie: send text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {
     "tellie-mcp": "./index.mjs"
@@ -15,5 +15,25 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
-  }
+  },
+  "license": "MIT",
+  "author": "Steve Chazin",
+  "homepage": "https://tellieapp.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChazinMac/tellie-dev.git",
+    "directory": "mcp"
+  },
+  "bugs": "https://github.com/ChazinMac/tellie-dev/issues",
+  "keywords": [
+    "tellie",
+    "notch",
+    "macos",
+    "menu-bar",
+    "teleprompter",
+    "second-screen",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents"
+  ]
 }
