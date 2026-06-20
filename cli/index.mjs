@@ -9,7 +9,7 @@
 
 import { execFile } from "node:child_process";
 import { parseArgs } from "node:util";
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, unlinkSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
@@ -150,6 +150,46 @@ function claudeSettingsPath(values) {
 function groupHasOurHook(arr, event) {
   return arr.some((g) => (g.hooks || []).some(
     (h) => typeof h.command === "string" && h.command.includes(`claude-hook ${event}`)));
+}
+
+// "Finished" only taps the notch when a turn ran at least this long, so quick
+// back-and-forth stays quiet and you only hear about work you walked away from.
+// (Generous on purpose: Claude will only get faster.)
+const FINISH_THRESHOLD_SEC = 45;
+const TIMER_DIR = path.join(os.tmpdir(), "tellie-claude");
+
+function timerFile(sessionId) {
+  const safe = String(sessionId || "default").replace(/[^A-Za-z0-9_.-]/g, "_");
+  return path.join(TIMER_DIR, safe + ".start");
+}
+function recordTurnStart(sessionId) {
+  try {
+    mkdirSync(TIMER_DIR, { recursive: true });
+    // best-effort prune of stale markers (sessions that started but never stopped)
+    try {
+      for (const f of readdirSync(TIMER_DIR)) {
+        const full = path.join(TIMER_DIR, f);
+        if (Date.now() - statSync(full).mtimeMs > 86400000) unlinkSync(full);
+      }
+    } catch { /* ignore */ }
+    writeFileSync(timerFile(sessionId), String(Date.now()));
+  } catch { /* ignore */ }
+}
+// Seconds since this turn started, consuming the marker. null if unknown.
+function turnElapsedSec(sessionId) {
+  try {
+    const f = timerFile(sessionId);
+    if (!existsSync(f)) return null;
+    const started = parseInt(readFileSync(f, "utf8").trim(), 10);
+    try { unlinkSync(f); } catch { /* ignore */ }
+    return Number.isFinite(started) ? (Date.now() - started) / 1000 : null;
+  } catch { return null; }
+}
+function formatDuration(sec) {
+  const s = Math.round(sec);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60), r = s % 60;
+  return r ? `${m}m ${r}s` : `${m}m`;
 }
 
 async function main() {
@@ -307,7 +347,7 @@ async function main() {
 
     if (values.off) {
       // Remove only the groups we added (identified by our claude-hook command).
-      for (const event of ["Stop", "Notification"]) {
+      for (const event of ["UserPromptSubmit", "Stop", "Notification"]) {
         if (Array.isArray(settings.hooks[event])) {
           settings.hooks[event] = settings.hooks[event].filter(
             (g) => !(g.hooks || []).some((h) => typeof h.command === "string" && h.command.includes("claude-hook")));
@@ -322,7 +362,7 @@ async function main() {
     }
 
     // Install: add our Stop + Notification hooks if not already present.
-    for (const [event, ev] of [["Stop", "stop"], ["Notification", "notification"]]) {
+    for (const [event, ev] of [["UserPromptSubmit", "prompt"], ["Stop", "stop"], ["Notification", "notification"]]) {
       if (!Array.isArray(settings.hooks[event])) settings.hooks[event] = [];
       if (!groupHasOurHook(settings.hooks[event], ev)) {
         settings.hooks[event].push({ matcher: "", hooks: [{ type: "command", command: hookCommand(ev) }] });
@@ -335,8 +375,9 @@ async function main() {
     process.stdout.write(
       "\nTellie is now watching Claude Code.\n\n" +
       "Start a task and walk away. I'll tap your notch the moment Claude\n" +
-      "finishes, or the moment it needs you. No dashboard, no babysitting\n" +
-      "the terminal.\n\n" +
+      "needs you, and when it finishes something you waited on. Quick replies\n" +
+      "stay quiet (I only flag a finish if the task ran 45 seconds or more), so\n" +
+      "it's signal, not noise. No dashboard, no babysitting the terminal.\n\n" +
       "Restart Claude Code (or open a new session) for it to take effect.\n" +
       "Undo anytime: tellie setup claude-code --off\n");
     return;
@@ -344,25 +385,51 @@ async function main() {
 
   if (cmd === "claude-hook") {
     // Internal: invoked by Claude Code's hooks. Reads the hook JSON on stdin,
-    // pushes a glance to the notch, and ALWAYS exits 0 (never blocks Claude).
+    // taps the notch when it matters, and ALWAYS exits 0 (never blocks Claude).
+    // Set TELLIE_HOOK_DEBUG=1 to dry-run: print the decision to stderr, no tap.
     let payload = {};
     try {
       const raw = readFileSync(0, "utf8");
       if (raw.trim()) payload = JSON.parse(raw);
     } catch { /* ignore */ }
     const event = (positionals[1] || "").toLowerCase();
+    const dry = !!process.env.TELLIE_HOOK_DEBUG;
+    const tap = async (url, dbg) => {
+      if (dry) { process.stderr.write(`tellie-hook: ${dbg}\n`); return; }
+      await openTellie(url);
+    };
     try {
-      if (event === "stop") {
+      if (event === "prompt") {
+        // Turn start. Stamp the time so Stop can tell long tasks from quick replies.
+        recordTurnStart(payload.session_id);
+        if (dry) process.stderr.write("tellie-hook: prompt recorded\n");
+      } else if (event === "stop") {
         if (!payload.stop_hook_active) {
-          const proj = payload.cwd ? path.basename(String(payload.cwd)) : "";
-          const text = proj ? `Claude finished · ${proj}` : "Claude finished";
-          await openTellie(`tellie://flash?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle`);
+          const el = turnElapsedSec(payload.session_id);
+          // Only tap when the turn ran long enough that you probably stepped away.
+          // el === null means we couldn't measure it, so notify rather than miss.
+          if (el === null || el >= FINISH_THRESHOLD_SEC) {
+            const proj = payload.cwd ? path.basename(String(payload.cwd)) : "";
+            let text = proj ? `Claude finished · ${proj}` : "Claude finished";
+            if (el !== null) text += ` (${formatDuration(el)})`;
+            await tap(
+              `tellie://flash?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle`,
+              `stop fire elapsed=${el === null ? "unknown" : Math.round(el) + "s"}`);
+          } else if (dry) {
+            process.stderr.write(`tellie-hook: stop skip elapsed=${Math.round(el)}s (< ${FINISH_THRESHOLD_SEC}s)\n`);
+          }
+        } else if (dry) {
+          process.stderr.write("tellie-hook: stop skip (stop_hook_active)\n");
         }
       } else if (event === "notification") {
         // Surface the "needs you" notifications; skip pure noise like auth_success.
         if (String(payload.notification_type || "") !== "auth_success") {
           const text = (payload.message && String(payload.message).trim()) || "Claude needs you";
-          await openTellie(`tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=bell.badge&attention=1`);
+          await tap(
+            `tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=bell.badge&attention=1`,
+            "notification fire");
+        } else if (dry) {
+          process.stderr.write("tellie-hook: notification skip (auth_success)\n");
         }
       }
     } catch { /* never fail a hook */ }
