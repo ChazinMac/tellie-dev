@@ -400,9 +400,12 @@ async function main() {
     };
     try {
       if (event === "prompt") {
-        // Turn start. Stamp the time so Stop can tell long tasks from quick replies.
+        // Turn start. Stamp the time so Stop can tell long tasks from quick replies,
+        // and retire any prior Claude Code notice, since you're back and typing.
         recordTurnStart(payload.session_id);
-        if (dry) process.stderr.write("tellie-hook: prompt recorded\n");
+        await tap(
+          `tellie://clear?source=${encodeURIComponent("Claude Code")}`,
+          "prompt recorded + cleared prior notice");
       } else if (event === "stop") {
         if (!payload.stop_hook_active) {
           const el = turnElapsedSec(payload.session_id);
@@ -412,8 +415,10 @@ async function main() {
             const proj = payload.cwd ? path.basename(String(payload.cwd)) : "";
             let text = proj ? `Claude finished · ${proj}` : "Claude finished";
             if (el !== null) text += ` (${formatDuration(el)})`;
+            // update (not flash) so it PERSISTS until you see it; attention so it
+            // catches your eye when you come back. The whole point is you stepped away.
             await tap(
-              `tellie://flash?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle`,
+              `tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle&attention=1`,
               `stop fire elapsed=${el === null ? "unknown" : Math.round(el) + "s"}`);
           } else if (dry) {
             process.stderr.write(`tellie-hook: stop skip elapsed=${Math.round(el)}s (< ${FINISH_THRESHOLD_SEC}s)\n`);
