@@ -9,7 +9,8 @@
 
 import { execFile } from "node:child_process";
 import { parseArgs } from "node:util";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
 
@@ -21,6 +22,7 @@ USAGE
   tellie send   <text> [--source NAME]
   tellie send   --file PATH [--source NAME]
   tellie clear
+  tellie setup  claude-code [--off]
   tellie status [--json]
   tellie log    [--source NAME] [--since 1h] [--day YYYY-MM-DD] [--limit N] [--json]
   tellie --help
@@ -29,6 +31,8 @@ USAGE
   flash   a transient status that auto-clears after a few seconds
   send    load readable content as a teleprompter script (click to read)
   clear   remove whatever is showing
+  setup   wire Tellie into your tools. "setup claude-code" taps your notch
+          when Claude Code finishes or needs you, hands-free. Free.
   status  read the LIVE notch state (the current roster). Free.
   log     read the notch history (Tellie Pro records it). Pro.
 
@@ -127,6 +131,27 @@ function fail(msg) {
   process.exit(1);
 }
 
+const SELF = fileURLToPath(import.meta.url);
+
+// The command we register in Claude Code's settings.json. A direct node exec is
+// fastest and survives package updates for global/local installs; when we are
+// running from npx's ephemeral cache, fall back to a stable `npx` invocation.
+function hookCommand(event) {
+  if (SELF.includes("/_npx/")) return `npx -y @tellie/cli claude-hook ${event}`;
+  return `"${process.execPath}" "${SELF}" claude-hook ${event}`;
+}
+
+function claudeSettingsPath(values) {
+  if (values.settings && values.settings.trim()) return path.resolve(values.settings.trim());
+  return path.join(os.homedir(), ".claude", "settings.json");
+}
+
+// Has this event array already got a hook that calls our claude-hook command?
+function groupHasOurHook(arr, event) {
+  return arr.some((g) => (g.hooks || []).some(
+    (h) => typeof h.command === "string" && h.command.includes(`claude-hook ${event}`)));
+}
+
 async function main() {
   let parsed;
   try {
@@ -143,6 +168,8 @@ async function main() {
         since: { type: "string" },
         day: { type: "string" },
         limit: { type: "string" },
+        off: { type: "boolean" },
+        settings: { type: "string" },
         help: { type: "boolean", short: "h" },
       },
     });
@@ -259,6 +286,87 @@ async function main() {
       process.stdout.write(`${clockTime(e.ts)}   ${src}${e.text}${arrow}\n`);
     }
     return;
+  }
+
+  if (cmd === "setup") {
+    const target = (positionals[1] || "").toLowerCase();
+    if (target !== "claude-code" && target !== "claude") {
+      fail('setup: only "claude-code" is supported right now. Try: tellie setup claude-code');
+    }
+    const sp = claudeSettingsPath(values);
+
+    // Load existing settings safely. A missing file is fine (start fresh); an
+    // unparseable file is NOT (we refuse rather than clobber the user's config).
+    let settings = {};
+    if (existsSync(sp)) {
+      try { settings = JSON.parse(readFileSync(sp, "utf8")); }
+      catch { fail(`${sp} is not valid JSON. Fix it first so I don't overwrite your settings.`); }
+      if (settings === null || typeof settings !== "object") settings = {};
+    }
+    if (!settings.hooks || typeof settings.hooks !== "object") settings.hooks = {};
+
+    if (values.off) {
+      // Remove only the groups we added (identified by our claude-hook command).
+      for (const event of ["Stop", "Notification"]) {
+        if (Array.isArray(settings.hooks[event])) {
+          settings.hooks[event] = settings.hooks[event].filter(
+            (g) => !(g.hooks || []).some((h) => typeof h.command === "string" && h.command.includes("claude-hook")));
+          if (settings.hooks[event].length === 0) delete settings.hooks[event];
+        }
+      }
+      if (Object.keys(settings.hooks).length === 0) delete settings.hooks;
+      if (existsSync(sp)) copyFileSync(sp, sp + ".tellie-bak");
+      writeFileSync(sp, JSON.stringify(settings, null, 2) + "\n");
+      process.stdout.write("Done. Tellie has stopped watching Claude Code.\n");
+      return;
+    }
+
+    // Install: add our Stop + Notification hooks if not already present.
+    for (const [event, ev] of [["Stop", "stop"], ["Notification", "notification"]]) {
+      if (!Array.isArray(settings.hooks[event])) settings.hooks[event] = [];
+      if (!groupHasOurHook(settings.hooks[event], ev)) {
+        settings.hooks[event].push({ matcher: "", hooks: [{ type: "command", command: hookCommand(ev) }] });
+      }
+    }
+    mkdirSync(path.dirname(sp), { recursive: true });
+    if (existsSync(sp)) copyFileSync(sp, sp + ".tellie-bak");
+    writeFileSync(sp, JSON.stringify(settings, null, 2) + "\n");
+
+    process.stdout.write(
+      "\nTellie is now watching Claude Code.\n\n" +
+      "Start a task and walk away. I'll tap your notch the moment Claude\n" +
+      "finishes, or the moment it needs you. No dashboard, no babysitting\n" +
+      "the terminal.\n\n" +
+      "Restart Claude Code (or open a new session) for it to take effect.\n" +
+      "Undo anytime: tellie setup claude-code --off\n");
+    return;
+  }
+
+  if (cmd === "claude-hook") {
+    // Internal: invoked by Claude Code's hooks. Reads the hook JSON on stdin,
+    // pushes a glance to the notch, and ALWAYS exits 0 (never blocks Claude).
+    let payload = {};
+    try {
+      const raw = readFileSync(0, "utf8");
+      if (raw.trim()) payload = JSON.parse(raw);
+    } catch { /* ignore */ }
+    const event = (positionals[1] || "").toLowerCase();
+    try {
+      if (event === "stop") {
+        if (!payload.stop_hook_active) {
+          const proj = payload.cwd ? path.basename(String(payload.cwd)) : "";
+          const text = proj ? `Claude finished · ${proj}` : "Claude finished";
+          await openTellie(`tellie://flash?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle`);
+        }
+      } else if (event === "notification") {
+        // Surface the "needs you" notifications; skip pure noise like auth_success.
+        if (String(payload.notification_type || "") !== "auth_success") {
+          const text = (payload.message && String(payload.message).trim()) || "Claude needs you";
+          await openTellie(`tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=bell.badge&attention=1`);
+        }
+      }
+    } catch { /* never fail a hook */ }
+    process.exit(0);
   }
 
   fail(`unknown command "${cmd}". See --help.`);
