@@ -57,8 +57,9 @@ NOTES
   to percent-encode.
 
   --feed PATH appends the pulse to a shared feed file (JSONL) instead of your
-  own notch. Point Tellie (Settings -> Watch a shared feed) at the same file in
-  Dropbox/Drive/iCloud and the whole team's notches light up. No server.
+  own notch; anyone whose Tellie watches that file gets it. Use --feed default
+  to target the zero-config file Tellie already watches (iCloud Drive/Tellie/
+  feed.jsonl). Point it at a Dropbox/Drive file to share with a team. No server.
 
   status/log READ Tellie's local files (no API needed): the live snapshot
   ~/Library/Application Support/Tellie/state.json (always written, free) and
@@ -196,6 +197,17 @@ function formatDuration(sec) {
   return r ? `${m}m ${r}s` : `${m}m`;
 }
 
+// The zero-config default feed file the Mac app watches (must match
+// PrompterState.defaultFeedURL): iCloud Drive/Tellie/feed.jsonl, or Application
+// Support if iCloud Drive is off. `--feed default` targets it with no path.
+function defaultFeedPath() {
+  const icloud = path.join(os.homedir(), "Library", "Mobile Documents", "com~apple~CloudDocs");
+  const base = existsSync(icloud)
+    ? path.join(icloud, "Tellie")
+    : path.join(os.homedir(), "Library", "Application Support", "Tellie");
+  return path.join(base, "feed.jsonl");
+}
+
 async function main() {
   let parsed;
   try {
@@ -250,7 +262,7 @@ async function main() {
       if (values.icon && values.icon.trim()) rec.icon = values.icon.trim();
       if (values.link && values.link.trim()) rec.link = values.link.trim();
       if (cmd === "update" && values.attention) rec.attention = true;
-      const fp = path.resolve(values.feed.trim());
+      const fp = values.feed.trim() === "default" ? defaultFeedPath() : path.resolve(values.feed.trim());
       mkdirSync(path.dirname(fp), { recursive: true });
       appendFileSync(fp, JSON.stringify(rec) + "\n");
       return;
