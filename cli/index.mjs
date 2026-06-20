@@ -9,7 +9,7 @@
 
 import { execFile } from "node:child_process";
 import { parseArgs } from "node:util";
-import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, unlinkSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, unlinkSync, readdirSync, statSync, appendFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import os from "node:os";
 import path from "node:path";
@@ -17,8 +17,8 @@ import path from "node:path";
 const HELP = `tellie — push to Tellie's notch (the silent second screen)
 
 USAGE
-  tellie update <text> [--source NAME] [--icon SYMBOL] [--attention] [--link URL] [--app BUNDLE_ID]
-  tellie flash  <text> [--source NAME] [--icon SYMBOL] [--link URL] [--app BUNDLE_ID]
+  tellie update <text> [--source NAME] [--icon SYMBOL] [--attention] [--link URL] [--app BUNDLE_ID] [--feed PATH]
+  tellie flash  <text> [--source NAME] [--icon SYMBOL] [--link URL] [--app BUNDLE_ID] [--feed PATH]
   tellie send   <text> [--source NAME]
   tellie send   --file PATH [--source NAME]
   tellie clear
@@ -55,6 +55,10 @@ NOTES
   single emoji. --link makes the row clickable (opens the URL); --app opens
   an app by bundle id instead. Encoding is handled for you; you do not need
   to percent-encode.
+
+  --feed PATH appends the pulse to a shared feed file (JSONL) instead of your
+  own notch. Point Tellie (Settings -> Watch a shared feed) at the same file in
+  Dropbox/Drive/iCloud and the whole team's notches light up. No server.
 
   status/log READ Tellie's local files (no API needed): the live snapshot
   ~/Library/Application Support/Tellie/state.json (always written, free) and
@@ -204,6 +208,7 @@ async function main() {
         attention: { type: "boolean", short: "a" },
         link: { type: "string", short: "l" },
         app: { type: "string" },
+        feed: { type: "string" },
         json: { type: "boolean" },
         since: { type: "string" },
         day: { type: "string" },
@@ -235,6 +240,21 @@ async function main() {
   if (cmd === "update" || cmd === "flash") {
     const text = textArg();
     if (!text) fail(`${cmd} needs text, or piped stdin. See --help.`);
+    // --feed: append a JSON line to a shared feed file instead of opening the
+    // local notch. A teammate, CI job, agent, or iPhone Shortcut writes here;
+    // anyone whose Tellie watches the file gets the pulse. ts is unix SECONDS
+    // to match the app's feed dedup. Steve 2026-06-20.
+    if (values.feed && values.feed.trim()) {
+      const rec = { ts: Date.now() / 1000, kind: cmd, text };
+      if (values.source && values.source.trim()) rec.source = values.source.trim();
+      if (values.icon && values.icon.trim()) rec.icon = values.icon.trim();
+      if (values.link && values.link.trim()) rec.link = values.link.trim();
+      if (cmd === "update" && values.attention) rec.attention = true;
+      const fp = path.resolve(values.feed.trim());
+      mkdirSync(path.dirname(fp), { recursive: true });
+      appendFileSync(fp, JSON.stringify(rec) + "\n");
+      return;
+    }
     let url = `tellie://${cmd}?text=${encodeURIComponent(text)}`;
     if (values.source && values.source.trim()) url += `&source=${encodeURIComponent(values.source)}`;
     if (values.icon && values.icon.trim()) url += `&icon=${encodeURIComponent(values.icon)}`;
