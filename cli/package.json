@@ -1,6 +1,6 @@
 {
   "name": "@tellie/cli",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Command-line tool for Tellie: push text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {
