@@ -90,9 +90,10 @@ One JSON object per line (JSONL). Minimum is `ts` (unix seconds) or `iso`, plus
 ```
 
 Fields: `ts` or `iso`, `text`, `source`, `origin`, `originIcon`, `icon`, `link`,
-`attention`, `kind` (`update` or `flash`). The default watched file is
-`~/Library/Mobile Documents/com~apple~CloudDocs/Tellie/feed.jsonl` (iCloud
-Drive), or `~/Library/Application Support/Tellie/feed.jsonl` if iCloud is off.
+`attention`, `kind` (`update` or `flash`). The default watched file is local:
+`~/Library/Application Support/Tellie/feed.jsonl`. For a fleet across Macs or a
+team, point `--feed` at the same shared-folder file (Dropbox/Drive/iCloud) on
+each machine.
 
 ## More
 
