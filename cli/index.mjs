@@ -264,6 +264,18 @@ function defaultFeedPath() {
   return path.join(base, "feed.jsonl");
 }
 
+// Be forgiving if --link was already percent-encoded: a real URL never starts
+// with a literal "https%3A", so if it does, the caller pre-encoded it. Decode
+// once so we don't double-encode into a broken "https%3A..." link that Finder
+// refuses to open (error -50). Steve hit this 2026-06-21.
+function normalizeLink(v) {
+  let s = (v || "").trim();
+  if (s && /^https?%3a/i.test(s)) {
+    try { s = decodeURIComponent(s); } catch {}
+  }
+  return s;
+}
+
 async function main() {
   let parsed;
   try {
@@ -310,6 +322,7 @@ async function main() {
   if (cmd === "update" || cmd === "flash") {
     const text = textArg();
     if (!text) fail(`${cmd} needs text, or piped stdin. See --help.`);
+    const link = normalizeLink(values.link);   // raw URL in; never double-encoded
     // --feed: append a JSON line to a shared feed file instead of opening the
     // local notch. A teammate, CI job, agent, or iPhone Shortcut writes here;
     // anyone whose Tellie watches the file gets the pulse. ts is unix SECONDS
@@ -320,7 +333,7 @@ async function main() {
       if (values.origin && values.origin.trim()) rec.origin = values.origin.trim();
       if (values["origin-icon"] && values["origin-icon"].trim()) rec.originIcon = values["origin-icon"].trim();
       if (values.icon && values.icon.trim()) rec.icon = values.icon.trim();
-      if (values.link && values.link.trim()) rec.link = values.link.trim();
+      if (link) rec.link = link;
       if (cmd === "update" && values.attention) rec.attention = true;
       feedAppend(resolveFeed(values), rec);
       return;
@@ -329,7 +342,7 @@ async function main() {
     if (values.source && values.source.trim()) url += `&source=${encodeURIComponent(values.source)}`;
     if (values.icon && values.icon.trim()) url += `&icon=${encodeURIComponent(values.icon)}`;
     if (cmd === "update" && values.attention) url += `&attention=1`;
-    if (values.link && values.link.trim()) url += `&link=${encodeURIComponent(values.link)}`;
+    if (link) url += `&link=${encodeURIComponent(link)}`;
     if (values.app && values.app.trim()) url += `&app=${encodeURIComponent(values.app)}`;
     await openTellie(url);
     return;
