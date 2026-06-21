@@ -7,7 +7,7 @@
 // Commands (today): send, dismiss. update/flash land once the Mac app
 // ships those URL actions (see TELLIE-FOR-DEVS-SPEC.md).
 
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { parseArgs } from "node:util";
 import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, unlinkSync, readdirSync, statSync, appendFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -22,7 +22,7 @@ USAGE
   tellie send   <text> [--source NAME]
   tellie send   --file PATH [--source NAME]
   tellie clear
-  tellie setup  claude-code [--off]
+  tellie setup  claude-code [--feed PATH] [--off]
   tellie status [--json]
   tellie log    [--source NAME] [--since 1h] [--day YYYY-MM-DD] [--limit N] [--json]
   tellie --help
@@ -32,7 +32,10 @@ USAGE
   send    load readable content as a teleprompter script (click to read)
   clear   remove whatever is showing
   setup   wire Tellie into your tools. "setup claude-code" taps your notch
-          when Claude Code finishes or needs you, hands-free. Free.
+          when Claude Code finishes or needs you, hands-free. It posts to the
+          feed Tellie watches, so every Mac you set up (same iCloud account)
+          shows your whole fleet of agents in one notch. Add --feed PATH to
+          point it at a shared team file (e.g. Dropbox) instead. Free.
   status  read the LIVE notch state (the current roster). Free.
   log     read the notch history (Tellie Pro records it). Pro.
 
@@ -60,6 +63,12 @@ NOTES
   own notch; anyone whose Tellie watches that file gets it. Use --feed default
   to target the zero-config file Tellie already watches (iCloud Drive/Tellie/
   feed.jsonl). Point it at a Dropbox/Drive file to share with a team. No server.
+
+  --origin NAME tags WHERE a feed pulse came from (a machine or a person). It
+  shows right-justified in the notch — e.g. source "Claude" on the left, origin
+  "Steve's MacBook Pro" or "Dana" on the right — so a fleet of agents across
+  machines (or a team) stays distinct. Origin only appears for feed entries that
+  set it; a plain local pulse looks the same as always.
 
   status/log READ Tellie's local files (no API needed): the live snapshot
   ~/Library/Application Support/Tellie/state.json (always written, free) and
@@ -141,9 +150,12 @@ const SELF = fileURLToPath(import.meta.url);
 // The command we register in Claude Code's settings.json. A direct node exec is
 // fastest and survives package updates for global/local installs; when we are
 // running from npx's ephemeral cache, fall back to a stable `npx` invocation.
-function hookCommand(event) {
-  if (SELF.includes("/_npx/")) return `npx -y @tellie/cli claude-hook ${event}`;
-  return `"${process.execPath}" "${SELF}" claude-hook ${event}`;
+function hookCommand(event, feedPath) {
+  // Only bake --feed for a custom (team) file; the default path is resolved at
+  // hook time, so the common solo case needs nothing embedded.
+  const feedArg = feedPath ? ` --feed ${JSON.stringify(feedPath)}` : "";
+  if (SELF.includes("/_npx/")) return `npx -y @tellie/cli claude-hook ${event}${feedArg}`;
+  return `"${process.execPath}" "${SELF}" claude-hook ${event}${feedArg}`;
 }
 
 function claudeSettingsPath(values) {
@@ -197,6 +209,44 @@ function formatDuration(sec) {
   return r ? `${m}m ${r}s` : `${m}m`;
 }
 
+// A short, human-friendly name for THIS machine, used to label its agents in the
+// shared feed (e.g. "Claude · Steve's MacBook Air"). So a solo dev's fleet —
+// several agents and/or several Macs — shows up as distinct roster rows, and a
+// teammate's machine is distinguishable too. Computed once per run.
+let _machineName;
+function machineName() {
+  if (_machineName !== undefined) return _machineName;
+  try {
+    const n = execFileSync("scutil", ["--get", "ComputerName"], { encoding: "utf8", timeout: 1500 }).trim();
+    if (n) return (_machineName = n);
+  } catch { /* fall through to hostname */ }
+  return (_machineName = os.hostname().replace(/\.(local|lan)$/i, ""));
+}
+
+// The agent name for Claude Code (the LEFT label in the notch). One const so
+// adding other agents (OpenClaw, etc.) later is a one-line change. The machine
+// name rides separately as `origin` (the RIGHT label), so the notch shows
+// "Claude … <text> … Steve's MacBook Pro" and the origin only appears for feed
+// entries — a plain local pulse stays clean.
+const HOOK_AGENT = "Claude";
+
+// Append one JSON record as a line to a feed file. Flag "a" is O_APPEND, so the
+// OS places each small line at end-of-file atomically: multiple agents on THIS
+// machine writing at the same instant never clobber each other. Across machines
+// the sync service (iCloud/Dropbox) is last-writer-wins — rare, and degrades to
+// a recoverable conflict copy, not silent loss.
+function feedAppend(feedPath, rec) {
+  mkdirSync(path.dirname(feedPath), { recursive: true });
+  appendFileSync(feedPath, JSON.stringify(rec) + "\n");
+}
+
+// Which feed file to write: an explicit --feed PATH, the literal "default", or
+// (unset) the zero-config file the Mac app already watches.
+function resolveFeed(values) {
+  const v = (values.feed || "").trim();
+  return (!v || v === "default") ? defaultFeedPath() : path.resolve(v);
+}
+
 // The zero-config default feed file the Mac app watches (must match
 // PrompterState.defaultFeedURL): iCloud Drive/Tellie/feed.jsonl, or Application
 // Support if iCloud Drive is off. `--feed default` targets it with no path.
@@ -221,6 +271,8 @@ async function main() {
         link: { type: "string", short: "l" },
         app: { type: "string" },
         feed: { type: "string" },
+        origin: { type: "string" },
+        "origin-icon": { type: "string" },
         json: { type: "boolean" },
         since: { type: "string" },
         day: { type: "string" },
@@ -259,12 +311,12 @@ async function main() {
     if (values.feed && values.feed.trim()) {
       const rec = { ts: Date.now() / 1000, kind: cmd, text };
       if (values.source && values.source.trim()) rec.source = values.source.trim();
+      if (values.origin && values.origin.trim()) rec.origin = values.origin.trim();
+      if (values["origin-icon"] && values["origin-icon"].trim()) rec.originIcon = values["origin-icon"].trim();
       if (values.icon && values.icon.trim()) rec.icon = values.icon.trim();
       if (values.link && values.link.trim()) rec.link = values.link.trim();
       if (cmd === "update" && values.attention) rec.attention = true;
-      const fp = values.feed.trim() === "default" ? defaultFeedPath() : path.resolve(values.feed.trim());
-      mkdirSync(path.dirname(fp), { recursive: true });
-      appendFileSync(fp, JSON.stringify(rec) + "\n");
+      feedAppend(resolveFeed(values), rec);
       return;
     }
     let url = `tellie://${cmd}?text=${encodeURIComponent(text)}`;
@@ -393,11 +445,16 @@ async function main() {
       return;
     }
 
+    // A custom --feed targets a shared team file (e.g. a Dropbox path); unset
+    // means the zero-config feed the app already watches (resolved at hook time).
+    const teamFeed = (values.feed && values.feed.trim() && values.feed.trim() !== "default")
+      ? path.resolve(values.feed.trim()) : null;
+
     // Install: add our Stop + Notification hooks if not already present.
     for (const [event, ev] of [["UserPromptSubmit", "prompt"], ["Stop", "stop"], ["Notification", "notification"]]) {
       if (!Array.isArray(settings.hooks[event])) settings.hooks[event] = [];
       if (!groupHasOurHook(settings.hooks[event], ev)) {
-        settings.hooks[event].push({ matcher: "", hooks: [{ type: "command", command: hookCommand(ev) }] });
+        settings.hooks[event].push({ matcher: "", hooks: [{ type: "command", command: hookCommand(ev, teamFeed) }] });
       }
     }
     mkdirSync(path.dirname(sp), { recursive: true });
@@ -410,15 +467,24 @@ async function main() {
       "needs you, and when it finishes something you waited on. Quick replies\n" +
       "stay quiet (I only flag a finish if the task ran 45 seconds or more), so\n" +
       "it's signal, not noise. No dashboard, no babysitting the terminal.\n\n" +
+      (teamFeed
+        ? `Posting to your shared feed:\n  ${teamFeed}\n` +
+          "Everyone whose Tellie watches that file sees this machine's agents.\n\n"
+        : "Runs on more than one Mac? Set it up on each (same iCloud account) and\n" +
+          "every machine's agents show up in one notch — your whole fleet, one glance.\n" +
+          "Sharing with a team? Re-run with --feed <shared-folder-file> (e.g. Dropbox).\n\n") +
       "Restart Claude Code (or open a new session) for it to take effect.\n" +
       "Undo anytime: tellie setup claude-code --off\n");
     return;
   }
 
   if (cmd === "claude-hook") {
-    // Internal: invoked by Claude Code's hooks. Reads the hook JSON on stdin,
-    // taps the notch when it matters, and ALWAYS exits 0 (never blocks Claude).
-    // Set TELLIE_HOOK_DEBUG=1 to dry-run: print the decision to stderr, no tap.
+    // Internal: invoked by Claude Code's hooks. Reads the hook JSON on stdin and,
+    // by default, POSTS to the shared feed Tellie watches (source "Claude · <this
+    // machine>"). So this machine's agents surface in your notch within a moment,
+    // and — since the feed syncs — on your other Macs and teammates' notches too.
+    // Always exits 0 (never blocks Claude). TELLIE_HOOK_DEBUG=1 dry-runs: print
+    // the decision to stderr, write nothing.
     let payload = {};
     try {
       const raw = readFileSync(0, "utf8");
@@ -426,32 +492,41 @@ async function main() {
     } catch { /* ignore */ }
     const event = (positionals[1] || "").toLowerCase();
     const dry = !!process.env.TELLIE_HOOK_DEBUG;
-    const tap = async (url, dbg) => {
-      if (dry) { process.stderr.write(`tellie-hook: ${dbg}\n`); return; }
-      await openTellie(url);
+    const feedPath = resolveFeed(values);
+    const source = HOOK_AGENT;                          // LEFT label: "Claude"
+    const origin = (values.origin && values.origin.trim()) || machineName(); // RIGHT label
+    // Laptop by default (your fleet is machines); a teammate can pass a person
+    // symbol via --origin-icon (e.g. person.fill) for the shared-feed case.
+    const originIcon = (values["origin-icon"] && values["origin-icon"].trim()) || "laptopcomputer";
+    // Append a finished / needs-you line to the feed. The local watcher shows it
+    // promptly and the sync fans it out to the rest of your fleet.
+    const post = (rec, dbg) => {
+      const base = { source, origin, originIcon };
+      if (dry) { process.stderr.write(`tellie-hook: ${dbg} -> ${JSON.stringify({ ...base, ...rec })}\n`); return; }
+      feedAppend(feedPath, { ts: Date.now() / 1000, ...base, ...rec });
     };
     try {
       if (event === "prompt") {
         // Turn start. Stamp the time so Stop can tell long tasks from quick replies,
-        // and retire any prior Claude Code notice, since you're back and typing.
+        // and retire this machine's prior Claude notice, since you're back typing.
+        // The clear is LOCAL-only (clears don't belong in the shared feed).
         recordTurnStart(payload.session_id);
-        await tap(
-          `tellie://clear?source=${encodeURIComponent("Claude Code")}`,
-          "prompt recorded + cleared prior notice");
+        const clearURL = `tellie://clear?source=${encodeURIComponent(source)}&origin=${encodeURIComponent(origin)}`;
+        if (dry) process.stderr.write(`tellie-hook: prompt recorded + would clear "${source} · ${origin}"\n`);
+        else await openTellie(clearURL);
       } else if (event === "stop") {
         if (!payload.stop_hook_active) {
           const el = turnElapsedSec(payload.session_id);
-          // Only tap when the turn ran long enough that you probably stepped away.
-          // el === null means we couldn't measure it, so notify rather than miss.
+          // Only surface when the turn ran long enough that you probably stepped
+          // away. el === null means we couldn't measure it, so notify, don't miss.
           if (el === null || el >= FINISH_THRESHOLD_SEC) {
             const proj = payload.cwd ? path.basename(String(payload.cwd)) : "";
             let text = proj ? `Claude finished · ${proj}` : "Claude finished";
             if (el !== null) text += ` (${formatDuration(el)})`;
             // update (not flash) so it PERSISTS until you see it; attention so it
-            // catches your eye when you come back. The whole point is you stepped away.
-            await tap(
-              `tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=checkmark.circle&attention=1`,
-              `stop fire elapsed=${el === null ? "unknown" : Math.round(el) + "s"}`);
+            // catches your eye when you come back. The point is you stepped away.
+            post({ kind: "update", text, icon: "checkmark.circle", attention: true },
+                 `stop fire elapsed=${el === null ? "unknown" : Math.round(el) + "s"}`);
           } else if (dry) {
             process.stderr.write(`tellie-hook: stop skip elapsed=${Math.round(el)}s (< ${FINISH_THRESHOLD_SEC}s)\n`);
           }
@@ -462,9 +537,7 @@ async function main() {
         // Surface the "needs you" notifications; skip pure noise like auth_success.
         if (String(payload.notification_type || "") !== "auth_success") {
           const text = (payload.message && String(payload.message).trim()) || "Claude needs you";
-          await tap(
-            `tellie://update?text=${encodeURIComponent(text)}&source=${encodeURIComponent("Claude Code")}&icon=bell.badge&attention=1`,
-            "notification fire");
+          post({ kind: "update", text, icon: "bell.badge", attention: true }, "notification fire");
         } else if (dry) {
           process.stderr.write("tellie-hook: notification skip (auth_success)\n");
         }
