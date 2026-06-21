@@ -248,14 +248,20 @@ function resolveFeed(values) {
   return (!v || v === "default") ? defaultFeedPath() : path.resolve(v);
 }
 
-// The default feed file the Mac app watches (must match
-// PrompterState.defaultFeedURL): a LOCAL file in Application Support, NOT iCloud
-// (touching iCloud Drive shows a scary "access iCloud Drive" prompt for plain
-// teleprompter users). For a fleet across Macs, point --feed at a shared folder
-// (Dropbox, or iCloud Drive) on each machine. `--feed default` targets the local
-// file with no path.
+// The default feed file the Mac app watches. The app publishes the file it is
+// CURRENTLY watching (Local or Team) to active-feed.txt, so `--feed default`
+// follows the app's Local/Team toggle with no reconfig: flip Tellie to Team and
+// your pulses land in the shared feed automatically. Falls back to the local
+// file (matching PrompterState.defaultFeedURL) when the pointer is absent. A
+// LOCAL default, never iCloud, so a plain teleprompter user never sees the
+// "access iCloud Drive" prompt.
 function defaultFeedPath() {
-  return path.join(os.homedir(), "Library", "Application Support", "Tellie", "feed.jsonl");
+  const base = path.join(os.homedir(), "Library", "Application Support", "Tellie");
+  try {
+    const active = readFileSync(path.join(base, "active-feed.txt"), "utf8").trim();
+    if (active) return active;
+  } catch {}
+  return path.join(base, "feed.jsonl");
 }
 
 async function main() {
