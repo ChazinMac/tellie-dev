@@ -82,5 +82,25 @@ Prefer not to hand-encode? The [`tellie` CLI](cli/) does it for you:
 tellie update "Build passed" --source build --icon hammer
 ```
 
+## Claude Code: tap the notch automatically
+
+```bash
+npx @tellie/cli setup claude-code        # finish / needs-you taps, hands-free
+npx @tellie/cli setup claude-code --off  # undo
+```
+
+## Shared fleet feed (across your Macs, or a team)
+
+Tellie watches a shared JSONL file (iCloud Drive / Dropbox / Drive). Anything
+that appends a line shows up. `--origin` labels the machine or person.
+
+```bash
+# post into the default watched feed
+tellie flash "tests green" --source Claude --origin "Mac Studio" --feed default
+
+# point the Claude Code hook at a shared team file
+tellie setup claude-code --feed ~/Dropbox/team/feed.jsonl
+```
+
 See also the [cookbook](cookbook/) for full recipes (narrate to your notch,
 mine your Pulse Log, fleet coordination, and more).
