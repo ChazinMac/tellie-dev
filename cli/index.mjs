@@ -33,9 +33,9 @@ USAGE
   clear   remove whatever is showing
   setup   wire Tellie into your tools. "setup claude-code" taps your notch
           when Claude Code finishes or needs you, hands-free. It posts to the
-          feed Tellie watches, so every Mac you set up (same iCloud account)
-          shows your whole fleet of agents in one notch. Add --feed PATH to
-          point it at a shared team file (e.g. Dropbox) instead. Free.
+          feed Tellie watches (a local file by default). For a fleet across
+          Macs or a team, add --feed PATH to point each machine at the same
+          shared-folder file (e.g. a Dropbox path). Free.
   status  read the LIVE notch state (the current roster). Free.
   log     read the notch history (Tellie Pro records it). Pro.
 
@@ -61,8 +61,9 @@ NOTES
 
   --feed PATH appends the pulse to a shared feed file (JSONL) instead of your
   own notch; anyone whose Tellie watches that file gets it. Use --feed default
-  to target the zero-config file Tellie already watches (iCloud Drive/Tellie/
-  feed.jsonl). Point it at a Dropbox/Drive file to share with a team. No server.
+  to target the local file Tellie watches by default (Application Support/
+  Tellie/feed.jsonl). Point it at a Dropbox/Drive/iCloud file to share across
+  your Macs or with a team. No server.
 
   --origin NAME tags WHERE a feed pulse came from (a machine or a person). It
   shows right-justified in the notch — e.g. source "Claude" on the left, origin
@@ -247,15 +248,14 @@ function resolveFeed(values) {
   return (!v || v === "default") ? defaultFeedPath() : path.resolve(v);
 }
 
-// The zero-config default feed file the Mac app watches (must match
-// PrompterState.defaultFeedURL): iCloud Drive/Tellie/feed.jsonl, or Application
-// Support if iCloud Drive is off. `--feed default` targets it with no path.
+// The default feed file the Mac app watches (must match
+// PrompterState.defaultFeedURL): a LOCAL file in Application Support, NOT iCloud
+// (touching iCloud Drive shows a scary "access iCloud Drive" prompt for plain
+// teleprompter users). For a fleet across Macs, point --feed at a shared folder
+// (Dropbox, or iCloud Drive) on each machine. `--feed default` targets the local
+// file with no path.
 function defaultFeedPath() {
-  const icloud = path.join(os.homedir(), "Library", "Mobile Documents", "com~apple~CloudDocs");
-  const base = existsSync(icloud)
-    ? path.join(icloud, "Tellie")
-    : path.join(os.homedir(), "Library", "Application Support", "Tellie");
-  return path.join(base, "feed.jsonl");
+  return path.join(os.homedir(), "Library", "Application Support", "Tellie", "feed.jsonl");
 }
 
 async function main() {
@@ -470,9 +470,9 @@ async function main() {
       (teamFeed
         ? `Posting to your shared feed:\n  ${teamFeed}\n` +
           "Everyone whose Tellie watches that file sees this machine's agents.\n\n"
-        : "Runs on more than one Mac? Set it up on each (same iCloud account) and\n" +
-          "every machine's agents show up in one notch — your whole fleet, one glance.\n" +
-          "Sharing with a team? Re-run with --feed <shared-folder-file> (e.g. Dropbox).\n\n") +
+        : "Runs on more than one Mac, or a team? Point each machine at the same\n" +
+          "shared-folder file: re-run with --feed <shared-folder-file> (e.g. a\n" +
+          "Dropbox path). Then every agent shows up in one notch.\n\n") +
       "Restart Claude Code (or open a new session) for it to take effect.\n" +
       "Undo anytime: tellie setup claude-code --off\n");
     return;
