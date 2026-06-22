@@ -1,6 +1,6 @@
 {
   "name": "@tellie/mcp",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "MCP server for Tellie: send text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {
@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "author": "Steve Chazin",
-  "homepage": "https://tellieapp.com",
+  "homepage": "https://tellieapp.com/developers",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChazinMac/tellie-dev.git",

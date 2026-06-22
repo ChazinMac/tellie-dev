@@ -1,6 +1,6 @@
 # Tellie for Developers
 
-Developer tools for [Tellie](https://tellieapp.com), the silent second screen
+Developer tools for [Tellie](https://tellieapp.com/developers), the silent second screen
 that lives in the Mac notch. Push a glanceable status to the notch (and read it
 back) from your terminal, a script, CI, or an AI agent.
 

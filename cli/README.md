@@ -1,6 +1,6 @@
 # @tellie/cli
 
-A `tellie` command-line tool for [Tellie](https://tellieapp.com), the silent
+A `tellie` command-line tool for [Tellie](https://tellieapp.com/developers), the silent
 second screen that lives in the Mac notch. Push a glanceable one-line status to
 the notch from your terminal, a script, CI, or an AI agent, and read it back.
 Thin wrapper over the public `tellie://` URL scheme: no private API, works
