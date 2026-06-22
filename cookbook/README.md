@@ -16,6 +16,18 @@ see the [terminal cheatsheet](../CHEATSHEET.md).
   **start here.** The one that makes people get it: your agent shows what it's
   actually doing, live, in your notch, and hands you clickable links when it's
   done. Lifecycle + descriptive updates + clickable hand-offs + attention.
+- **⭐ [Teach your agent to Tellie me](teach-your-agent-to-tellie-me.md):** the
+  zero-wiring version. Tell your AI to narrate and hand off links, point it at
+  llms.txt, and a capable agent runs with it (Storm did, cold).
+- **⭐ [Your fleet in one notch](your-fleet-in-one-notch.md):** one command and
+  the notch taps you when any agent finishes or needs you, across every Mac.
+  Flip Solo to Team for a shared, backend-free JSONL feed.
+- **⭐ [Get pinged on your phone](notify-your-phone.md):** bridge the notch to
+  Telegram or ntfy.sh. Tail the Pulse Log, forward only the lines worth
+  interrupting you for, and get tapped when a long job is done. (Pro.)
+- **⭐ [X-ray your agent's file edits](xray-your-agents-edits.md):** a file
+  watcher flashes every create/edit/delete to the notch, an agent-agnostic
+  heartbeat of what your AI is actually touching. No cooperation required.
 - **⭐ [Mine your Pulse Log](mine-your-pulse-log.md)** — Tellie keeps a private,
   local, plain-text JSONL of everything that ever pinged your notch. `jq` it for
   agent turn durations, reopen every link a tool handed you, `tail -f` for
@@ -31,6 +43,9 @@ see the [terminal cheatsheet](../CHEATSHEET.md).
   the notch and nudges you when the interval ends.
 - **[CI status in the notch](ci-to-notch.md)** — reflect a GitHub Actions run
   (or any webhook) so you stop babysitting a browser tab.
+- **[Auto-pulse your PRs](auto-pulse-prs.md):** a tiny git hook (or `gh` alias)
+  pulses every PR you open to the notch as a clickable row, no remembering
+  required.
 - **[Cheat sheets & reminders](cheat-sheet-reminders.md)** — park talking
   points or an agenda you can glance at, private on a screen share.
 - **["Now reading"](now-reading.md)** — `send` a script and read it on camera
