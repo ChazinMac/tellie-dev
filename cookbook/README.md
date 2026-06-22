@@ -48,3 +48,20 @@ The whole point: these are examples, not limits. You have `update` (set a
 line), `flash` (transient), `clear` (remove), and `send` (load readable
 content), each with a `source` name and an `icon` (SF Symbol or emoji). Go
 build the glance you wish you had.
+
+## Share your own
+
+Built something? We'd love to see it.
+
+- **Show it off:** post in [Discussions: Show & tell](../../discussions). A
+  snippet, a GIF of your notch, a line on what it does. No pull request needed;
+  this is where the conversation lives.
+- **Add it to the cookbook:** copy [`TEMPLATE.md`](TEMPLATE.md) to
+  `cookbook/your-recipe-name.md`, fill it in, add a line for it under
+  "Recipes" above, and open a pull request. The recipes above are your
+  examples. We feature the best ones on the
+  [official cookbook](https://tellieapp.com/developers/cookbook), with credit.
+
+House style: small, local-first, zero-dependency. A few lines using tools you
+already have (`bash`, `jq`, `git`, `fswatch`), piped into `tellie`. No SDK, no
+backend, no account.
