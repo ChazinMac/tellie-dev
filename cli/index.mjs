@@ -23,6 +23,7 @@ USAGE
   tellie send   --file PATH [--source NAME]
   tellie clear
   tellie setup  claude-code [--feed PATH] [--off]
+  tellie setup  lmstudio [--off]
   tellie status [--json]
   tellie log    [--source NAME] [--since 1h] [--day YYYY-MM-DD] [--limit N] [--json]
   tellie --help
@@ -31,11 +32,11 @@ USAGE
   flash   a transient status that auto-clears after a few seconds
   send    load readable content as a teleprompter script (click to read)
   clear   remove whatever is showing
-  setup   wire Tellie into your tools. "setup claude-code" taps your notch
-          when Claude Code finishes or needs you, hands-free. It posts to the
-          feed Tellie watches (a local file by default). For a fleet across
-          Macs or a team, add --feed PATH to point each machine at the same
-          shared-folder file (e.g. a Dropbox path). Free.
+  setup   wire Tellie into your tools, hands-free. "setup claude-code" taps
+          your notch when Claude Code finishes or needs you (add --feed PATH to
+          share one feed across Macs or a team). "setup lmstudio" registers
+          Tellie as an MCP server so a local tool-calling model can push to the
+          notch. Undo either with --off. Free.
   status  read the LIVE notch state (the current roster). Free.
   log     read the notch history (Tellie Pro records it). Pro.
 
@@ -433,8 +434,47 @@ async function main() {
 
   if (cmd === "setup") {
     const target = (positionals[1] || "").toLowerCase();
+
+    // --- LM Studio (and any MCP client): register the Tellie MCP server so a
+    // local tool-calling model can push to the notch. LM Studio reads
+    // ~/.lmstudio/mcp.json; we merge in (or remove) just our "tellie" entry,
+    // leaving any other servers untouched. Backup before writing, same as
+    // the claude-code path.
+    if (target === "lmstudio" || target === "lm-studio") {
+      const mp = path.join(os.homedir(), ".lmstudio", "mcp.json");
+      let conf = { mcpServers: {} };
+      if (existsSync(mp)) {
+        try { conf = JSON.parse(readFileSync(mp, "utf8")); }
+        catch { fail(`${mp} is not valid JSON. Fix it first so I don't overwrite your config.`); }
+        if (conf === null || typeof conf !== "object") conf = {};
+      }
+      if (!conf.mcpServers || typeof conf.mcpServers !== "object") conf.mcpServers = {};
+
+      mkdirSync(path.dirname(mp), { recursive: true });
+      if (values.off) {
+        delete conf.mcpServers.tellie;
+        if (existsSync(mp)) copyFileSync(mp, mp + ".tellie-bak");
+        writeFileSync(mp, JSON.stringify(conf, null, 2) + "\n");
+        process.stdout.write("Done. Removed Tellie from LM Studio's MCP servers.\n");
+        return;
+      }
+
+      conf.mcpServers.tellie = { command: "npx", args: ["-y", "@tellie/mcp"] };
+      if (existsSync(mp)) copyFileSync(mp, mp + ".tellie-bak");
+      writeFileSync(mp, JSON.stringify(conf, null, 2) + "\n");
+      process.stdout.write(
+        "\nTellie is now an MCP server in LM Studio.\n\n" +
+        "Restart LM Studio (or toggle the tellie server on in its Integrations /\n" +
+        "Program panel). With a tool-calling model loaded, ask it to \"send a test\n" +
+        "to Tellie\" and the strip should drop into your notch.\n\n" +
+        "Three tools are exposed: update_status, flash_status, send_to_tellie.\n" +
+        "Local models vary at tool-calling; Qwen and Llama-3.x-instruct are solid.\n\n" +
+        "Undo anytime: tellie setup lmstudio --off\n");
+      return;
+    }
+
     if (target !== "claude-code" && target !== "claude") {
-      fail('setup: only "claude-code" is supported right now. Try: tellie setup claude-code');
+      fail('setup: supported targets are "claude-code" and "lmstudio". Try: tellie setup lmstudio');
     }
     const sp = claudeSettingsPath(values);
 
