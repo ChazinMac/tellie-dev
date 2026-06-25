@@ -459,16 +459,26 @@ async function main() {
         return;
       }
 
-      conf.mcpServers.tellie = { command: "npx", args: ["-y", "@tellie/mcp"] };
+      // GUI apps (LM Studio) launch with a minimal PATH that doesn't include
+      // nvm/Homebrew node, so a bare "npx" fails to spawn and the server
+      // silently never appears in Integrations. Resolve the absolute npx that
+      // sits beside the node running this CLI, and fall back to bare "npx" only
+      // if we can't find it.
+      const npxAbs = path.join(path.dirname(process.execPath), "npx");
+      const npxCmd = existsSync(npxAbs) ? npxAbs : "npx";
+      conf.mcpServers.tellie = { command: npxCmd, args: ["-y", "@tellie/mcp"] };
       if (existsSync(mp)) copyFileSync(mp, mp + ".tellie-bak");
       writeFileSync(mp, JSON.stringify(conf, null, 2) + "\n");
       process.stdout.write(
         "\nTellie is now an MCP server in LM Studio.\n\n" +
-        "Restart LM Studio (or toggle the tellie server on in its Integrations /\n" +
-        "Program panel). With a tool-calling model loaded, ask it to \"send a test\n" +
-        "to Tellie\" and the strip should drop into your notch.\n\n" +
+        "1. Fully quit and reopen LM Studio so it re-reads the config.\n" +
+        "2. Load a tool-calling chat model on THIS Mac (Qwen or Llama-3.x-\n" +
+        "   instruct are solid; embedding-only or tiny models won't call tools).\n" +
+        "3. In the chat, click the wrench icon in the message bar and switch on\n" +
+        "   mcp/tellie for the conversation.\n" +
+        "4. Ask it to \"call the update_status tool\" and approve the tool call.\n" +
+        "   The strip drops into your notch.\n\n" +
         "Three tools are exposed: update_status, flash_status, send_to_tellie.\n" +
-        "Local models vary at tool-calling; Qwen and Llama-3.x-instruct are solid.\n\n" +
         "Undo anytime: tellie setup lmstudio --off\n");
       return;
     }
