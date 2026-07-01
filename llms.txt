@@ -1,0 +1,26 @@
+# Tellie for Developers
+
+> CLI, MCP server, and the tellie:// URL scheme for Tellie, the silent second
+> screen that lives in the Mac notch. Anything that can run a command can push a
+> glanceable status to your notch, from your terminal, a script, CI, or an AI
+> agent, and read it back.
+
+The full, always-current agent manual is hosted at https://tellieapp.com/llms.txt
+(point a capable agent there and say "Tellie me").
+
+## Start here
+
+- [README](https://github.com/ChazinMac/tellie-dev/blob/main/README.md)
+- [Cookbook](https://github.com/ChazinMac/tellie-dev/tree/main/cookbook) — recipes for the notch surface
+- [Terminal cheatsheet](https://github.com/ChazinMac/tellie-dev/blob/main/CHEATSHEET.md) — every verb and flag
+- [Full developer docs](https://tellieapp.com/developers)
+
+## Packages
+
+- `@tellie/cli` — the `tellie` command-line tool (`update` / `flash` / `send` / `clear` / `status` / `log`, the Claude Code hook, the shared fleet feed)
+- `@tellie/mcp` — an MCP server so MCP-aware AI clients (Claude Desktop, Cursor, etc.) can push to the notch
+
+## The story
+
+Tellie was built in about 3 days by a 30-year Apple veteran pairing with AI. The
+origin story: https://stevechazin.com/i-built-a-mac-app-in-3-days-and-you-can-too/

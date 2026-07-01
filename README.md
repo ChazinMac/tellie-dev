@@ -30,3 +30,9 @@ capable agent here and say "Tellie me"): <https://tellieapp.com/llms.txt>.
 Published to npm: `@tellie/mcp` and `@tellie/cli` are live. The Claude Code hook
 and the fleet feed ship with the `@tellie/cli` 0.5.x line (pairs with Tellie
 1.4.3+, which added the feed watcher and origin labels in the notch).
+
+## The story
+
+Tellie was built in about 3 days by a 30-year Apple veteran pairing with AI. If
+you're curious how (and why a developer surface exists at all), here's the origin
+story: <https://stevechazin.com/i-built-a-mac-app-in-3-days-and-you-can-too/>
