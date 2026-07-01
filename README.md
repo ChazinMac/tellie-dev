@@ -29,4 +29,4 @@ capable agent here and say "Tellie me"): <https://tellieapp.com/llms.txt>.
 
 Published to npm: `@tellie/mcp` and `@tellie/cli` are live. The Claude Code hook
 and the fleet feed ship with the `@tellie/cli` 0.5.x line (pairs with Tellie
-1.4.3, which adds the feed watcher and origin labels in the notch).
+1.4.3+, which added the feed watcher and origin labels in the notch).
