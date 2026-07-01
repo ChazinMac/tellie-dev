@@ -56,6 +56,10 @@ see the [terminal cheatsheet](../CHEATSHEET.md).
 - **[Agent fleet coordination](agent-fleet-coordination.md)** — mission
   control for many agents at once: each announces itself, checks the others
   before claiming work, hands off, and raises a hand when you're needed.
+- **[Tellie for local-model tools](tellie-for-local-models.md)** — run models
+  on your own Mac (LM Studio, OpenClaw, Ollama) and push to the notch exactly
+  like Claude does: MCP for model runners, the CLI or URL scheme for agent
+  frameworks. All on-device, no keys.
 
 ## Bring your own
 
