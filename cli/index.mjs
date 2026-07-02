@@ -595,8 +595,11 @@ async function main() {
             // update (not flash) so it PERSISTS until you see it. No attention:
             // a routine finish shouldn't raise the "come look now" flag (that's
             // what the Notification hook is for). Tapping the row foregrounds
-            // Claude Desktop so you can jump straight back to the session.
-            post({ kind: "update", text, icon: "checkmark.circle", app: "com.anthropic.claudefordesktop" },
+            // Claude Desktop via its claude:// scheme. We use link= (not app=):
+            // the feed watcher carries `link` but not `app`, and the scheme just
+            // focuses the app, whereas opening the .app bundle would trip the
+            // macOS App Management prompt. Steve verified 2026-07-01.
+            post({ kind: "update", text, icon: "checkmark.circle", link: "claude://" },
                  `stop fire elapsed=${el === null ? "unknown" : Math.round(el) + "s"}`);
           } else if (dry) {
             process.stderr.write(`tellie-hook: stop skip elapsed=${Math.round(el)}s (< ${FINISH_THRESHOLD_SEC}s)\n`);
@@ -608,7 +611,7 @@ async function main() {
         // Surface the "needs you" notifications; skip pure noise like auth_success.
         if (String(payload.notification_type || "") !== "auth_success") {
           const text = (payload.message && String(payload.message).trim()) || "Claude needs you";
-          post({ kind: "update", text, icon: "bell.badge", attention: true, app: "com.anthropic.claudefordesktop" }, "notification fire");
+          post({ kind: "update", text, icon: "bell.badge", attention: true, link: "claude://" }, "notification fire");
         } else if (dry) {
           process.stderr.write("tellie-hook: notification skip (auth_success)\n");
         }
