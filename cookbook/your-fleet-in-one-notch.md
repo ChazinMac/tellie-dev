@@ -72,6 +72,11 @@ follows the toggle either way.
 
 - **Latency is sync speed** (seconds), perfect for "done / needs review /
   heads-up." Tellie is glanceable status, not a chat app.
+- **Fleet links open locally.** The "Claude finished" / "Claude needs you" rows
+  carry a jump-back link that opens Claude Desktop on *whichever Mac you click
+  it from*. That's most useful on the machine where that Claude is actually
+  running; on the rest of the fleet the row is informational (the origin label
+  tells you whose it is).
 - **It's a primitive.** Point a capable agent at
   [llms.txt](https://tellieapp.com/llms.txt) and say "Tellie me," and it works
   the rest out on its own.
