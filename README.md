@@ -37,6 +37,14 @@ and the fleet feed ship with the `@tellie/cli` 0.5.x line (pairs with Tellie
 
 ## The story
 
-Tellie was built in about 3 days by a 30-year Apple veteran pairing with AI. If
-you're curious how (and why a developer surface exists at all), here's the origin
-story: <https://stevechazin.com/i-built-a-mac-app-in-3-days-and-you-can-too/>
+Tellie started as a teleprompter. It listened to my voice and scrolled my script.
+Then I gave it a URL scheme so my own tools could push a line to the notch, mostly
+so I'd stop tabbing away to check whether something had finished.
+
+Then an agent read those docs and started using it on its own. Nobody told it to.
+It decided that handing me a clickable link beat burying one in scrollback, and it
+made that a habit. A second agent later ran all 17 cookbook recipes cold, start to
+finish, without help.
+
+That's when the teleprompter turned out to be one shape of something bigger: a
+surface that listens, and holds what you need while you're looking somewhere else.
