@@ -1,5 +1,9 @@
 # Tellie for Developers
 
+[![The Mac notch collapsed to a single pill, then expanded on hover to show Claude, Tests, Storm and CI reporting from a MacBook Pro, with a weather row arriving from a Mac mini.](https://tellieapp.com/tellie-notch-loop.gif)](https://tellieapp.com/developers)
+
+<sup>Four agents on this Mac and one on another, all reporting into one notch. Hover to peek; rows with links are clickable.</sup>
+
 Developer tools for [Tellie](https://tellieapp.com/developers), the silent second screen
 that lives in the Mac notch. Push a glanceable status to the notch (and read it
 back) from your terminal, a script, CI, or an AI agent.
