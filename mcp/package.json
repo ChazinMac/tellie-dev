@@ -1,6 +1,6 @@
 {
   "name": "@tellie/mcp",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "MCP server for Tellie: send text to the silent second screen in the Mac notch.",
   "type": "module",
   "bin": {

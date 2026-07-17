@@ -1,12 +1,9 @@
-# @tellie/mcp (spike)
+# @tellie/mcp
 
 An MCP server that lets AI clients (Claude Desktop, etc.) push text to
 **Tellie's silent second screen** in the Mac notch. It wraps the public
 `tellie://` URL scheme (documented in Tellie's INTEGRATIONS.md), so it needs
 no private API and works against any installed Tellie build.
-
-Status: working (pre-publish). Verified end to end via `test-client.mjs`.
-Playback verbs and npm publishing come next; see `../TELLIE-FOR-DEVS-SPEC.md`.
 
 ## Tools
 

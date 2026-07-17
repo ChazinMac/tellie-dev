@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Tellie MCP server (spike).
+// Tellie MCP server.
 //
 // Exposes Tellie's silent second screen (the Mac notch) to MCP-aware AI
 // clients like Claude Desktop. v0 has one tool, send_to_tellie, which
